@@ -33,14 +33,14 @@ const initialCarFormValues: CarFormValues = {
   leasingDownPayment: '2,500',
   leasingDuration: '36',
   leasingRate: '5.49',
-  leasingResidualValue: '50',
+  leasingResidualValue: '26,250',
   leasingAnnualMileage: '12,000',
   leasingBuyoutOption: true,
   creditVehiclePrice: '52,500',
   creditDownPayment: '5,250',
-  creditLoanAmount: '47,250',
   creditInterestRate: '5.49',
   creditDuration: '60',
+  creditEstimatedTaxAdvantage: '0',
   creditExpectedResaleValue: '26,250',
 };
 
@@ -61,7 +61,7 @@ export function CarPage() {
           Car financing
         </h1>
         <p className="mt-2 text-sm text-slate-700">
-          Compare Leasing vs Credit
+          Compare Leasing vs Credit (In progress)
         </p>
       </header>
 
@@ -82,11 +82,11 @@ export function CarPage() {
             <CarTextField id="leasingDownPayment" label="Down payment" prefix="CHF" value={formValues.leasingDownPayment} onChange={updateField} />
             <CarTextField id="leasingDuration" label="Lease duration" suffix="months" value={formValues.leasingDuration} onChange={updateField} />
             <CarTextField id="leasingRate" label="Lease rate" suffix="%" value={formValues.leasingRate} onChange={updateField} />
-            <CarTextField id="leasingResidualValue" label="Residual value" suffix="%" value={formValues.leasingResidualValue} onChange={updateField} />
             <CarTextField id="leasingAnnualMileage" label="Annual mileage" suffix="km" value={formValues.leasingAnnualMileage} onChange={updateField} />
+            <CarTextField id="leasingResidualValue" label="Residual value" prefix="CHF" value={formValues.leasingResidualValue} onChange={updateField} />
             <CarToggleField
               id="leasingBuyoutOption"
-              label="Buyout option at end"
+              label="Buyout option at the end"
               value={formValues.leasingBuyoutOption === true}
               onChange={updateField}
             />
@@ -98,12 +98,18 @@ export function CarPage() {
           >
             <CarTextField id="creditVehiclePrice" label="Vehicle price" prefix="CHF" value={formValues.creditVehiclePrice} onChange={updateField} />
             <CarTextField id="creditDownPayment" label="Down payment" prefix="CHF" value={formValues.creditDownPayment} onChange={updateField} />
-            <CarTextField id="creditLoanAmount" label="Loan amount" prefix="CHF" value={formValues.creditLoanAmount} onChange={updateField} />
-            <CarTextField id="creditInterestRate" label="Interest rate" suffix="%" value={formValues.creditInterestRate} onChange={updateField} />
             <CarTextField id="creditDuration" label="Loan duration" suffix="months" value={formValues.creditDuration} onChange={updateField} />
+            <CarTextField id="creditInterestRate" label="Interest rate" suffix="%" value={formValues.creditInterestRate} onChange={updateField} />
+            <CarTextField
+              id="creditEstimatedTaxAdvantage"
+              label="Est. tax advantage per year"
+              prefix="CHF"
+              value={formValues.creditEstimatedTaxAdvantage}
+              onChange={updateField}
+            />
             <CarTextField
               id="creditExpectedResaleValue"
-              label="Expected resale value after X years"
+              label="Est. resale value"
               prefix="CHF"
               value={formValues.creditExpectedResaleValue}
               onChange={updateField}
@@ -132,7 +138,7 @@ function CarFinancingCard({
         <div className={`grid h-10 w-10 place-items-center rounded-2xl ${iconClassName}`}>
           <Icon className="h-5 w-5" />
         </div>
-        <h2 className="text-sm font-bold text-slate-950">{title}</h2>
+        <h2 className="text-lg font-bold text-slate-950">{title}</h2>
       </div>
       <div className="mt-4 space-y-2.5 text-sm">
         {children}
@@ -159,8 +165,7 @@ function CarTextField({
   return (
     <label className="grid min-w-0 grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_9rem] sm:gap-3">
       <span className="truncate text-sm font-medium text-slate-800">{label}</span>
-      <span className="glass-input grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 py-2 text-sm">
-        {prefix && <span className="text-sm font-normal text-slate-600">{prefix}</span>}
+      <span className="glass-input grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2 text-sm">
         <input
           aria-label={label}
           className="w-full min-w-0 bg-transparent text-right font-black text-slate-950 outline-none"
@@ -169,6 +174,7 @@ function CarTextField({
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(id, event.currentTarget.value)}
         />
+        {prefix && <span className="text-sm font-normal text-slate-600">{prefix}</span>}
         {suffix && <span className="whitespace-nowrap text-sm font-normal text-slate-600">{suffix}</span>}
       </span>
     </label>
@@ -190,7 +196,7 @@ function CarToggleField({
     <label className="grid min-w-0 grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_9rem] sm:gap-3">
       <span className="truncate text-sm font-medium text-slate-800">{label}</span>
       <span className="glass-input flex w-full min-w-0 items-center justify-between py-2 text-sm">
-        <span className="font-bold text-slate-950">{value ? 'Yes' : 'No'}</span>
+        <span className="font-medium text-slate-950">{value ? 'Yes' : 'No'}</span>
         <span className="relative inline-flex h-6 w-11 items-center">
           <input
             aria-label={label}
@@ -199,7 +205,7 @@ function CarToggleField({
             type="checkbox"
             onChange={(event) => onChange(id, event.currentTarget.checked)}
           />
-          <span className="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-blue-600" />
+          <span className="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-blue-500/35" />
           <span className="absolute left-1 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
         </span>
       </span>
