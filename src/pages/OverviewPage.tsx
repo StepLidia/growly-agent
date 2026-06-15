@@ -118,7 +118,7 @@ export function OverviewPage({ dashboard, projectionYears }: OverviewPageProps) 
 
   return (
     <section
-      className="relative flex min-h-152 flex-1 overflow-hidden rounded-lg border border-slate-200/60 bg-cover bg-bottom px-5 pt-6 pb-40 shadow-sm sm:pb-48 md:min-h-144 md:px-8 md:pt-5 md:pb-48 xl:pt-6 xl:pb-56"
+      className="relative flex min-h-152 flex-1 flex-col overflow-hidden rounded-lg border border-slate-200/60 bg-cover bg-bottom px-5 pt-6 pb-40 shadow-sm sm:pb-48 md:min-h-144 md:justify-center md:px-8 md:pt-5 md:pb-48 xl:pt-6 xl:pb-56"
       style={{ backgroundImage: 'url("/images/background.webp")' }}
     >
       <div className="absolute inset-0 bg-linear-to-br from-white/80 via-sky-50/60 to-yellow-50/64" aria-hidden="true" />
