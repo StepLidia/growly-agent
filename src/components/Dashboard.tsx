@@ -49,6 +49,29 @@ export function Dashboard() {
     return () => window.clearTimeout(timeoutId);
   }, [importStatus]);
 
+  useEffect(() => {
+    function focusTooltipTrigger(event: PointerEvent) {
+      const target = event.target instanceof Element
+        ? event.target.closest<HTMLElement>('[aria-describedby]')
+        : null;
+
+      if (target) {
+        target.focus({ preventScroll: true });
+        return;
+      }
+
+      const activeElement = document.activeElement;
+
+      if (activeElement instanceof HTMLElement && activeElement.hasAttribute('aria-describedby')) {
+        activeElement.blur();
+      }
+    }
+
+    document.addEventListener('pointerdown', focusTooltipTrigger, true);
+
+    return () => document.removeEventListener('pointerdown', focusTooltipTrigger, true);
+  }, []);
+
   function updateAsset(
     id: AssetKind,
     field: keyof Pick<FinancialAsset, 'amount' | 'monthlyContribution' | 'annualReturn'>,

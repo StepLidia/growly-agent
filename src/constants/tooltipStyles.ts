@@ -5,7 +5,7 @@ const tooltipBaseClasses =
   `pointer-events-none absolute z-50 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 ${tooltipSurfaceClasses}`;
 
 const hoverTooltipBaseClasses =
-  `pointer-events-none absolute z-50 opacity-0 transition-opacity group-hover:opacity-100 ${tooltipSurfaceClasses}`;
+  `pointer-events-none absolute z-50 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 ${tooltipSurfaceClasses}`;
 
 export function tooltipClasses(...classes: string[]) {
   return [tooltipBaseClasses, ...classes].filter(Boolean).join(' ');
