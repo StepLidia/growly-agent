@@ -12,7 +12,6 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   PerspectiveCamera,
-  RectAreaLight,
   Scene,
   SRGBColorSpace,
   Vector3,
@@ -20,7 +19,6 @@ import {
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { tooltipClasses } from '../constants/tooltipStyles';
 
@@ -246,7 +244,6 @@ function CarModelViewer() {
 
     const scene = new Scene();
     scene.background = null;
-    RectAreaLightUniformsLib.init();
 
     const camera = new PerspectiveCamera(34, 1, 0.1, 100);
     camera.position.set(0, 0.95, 7);
@@ -276,8 +273,11 @@ function CarModelViewer() {
     fillLight.position.set(-4, 2.4, 3);
     const rimLight = new DirectionalLight('#e5e7eb', 2.2);
     rimLight.position.set(-3, 3.2, -4);
-    const studioLights = createStudioLights();
-    scene.add(ambientLight, keyLight, fillLight, rimLight, studioLights);
+    const topLight = new DirectionalLight('#ffffff', 1.7);
+    topLight.position.set(0, 5, 1);
+    const sideLight = new DirectionalLight('#f8fafc', 1.1);
+    sideLight.position.set(4, 1.8, -2.5);
+    scene.add(ambientLight, keyLight, fillLight, rimLight, topLight, sideLight);
 
     let animationFrameId = 0;
     let isMounted = true;
@@ -320,9 +320,6 @@ function CarModelViewer() {
     );
 
     const renderFrame = () => {
-      const elapsedSeconds = performance.now() * 0.001;
-
-      studioLights.rotation.y = Math.sin(elapsedSeconds * 0.35) * 0.22;
       controls.update();
       renderer.render(scene, camera);
       animationFrameId = window.requestAnimationFrame(renderFrame);
@@ -368,23 +365,6 @@ function disposeMaterial(material: Material | Material[]) {
   }
 
   material.dispose();
-}
-
-function createStudioLights() {
-  const lightRig = new Group();
-  const leftSoftbox = new RectAreaLight('#ffffff', 5.2, 4.8, 2.2);
-  const topSoftbox = new RectAreaLight('#f8fafc', 4.4, 4.4, 1.4);
-  const edgeSoftbox = new RectAreaLight('#f1f5f9', 2.5, 2.4, 2.6);
-
-  leftSoftbox.position.set(-3.8, 2.4, 2.8);
-  leftSoftbox.lookAt(0, 0, 0);
-  topSoftbox.position.set(0.5, 4.3, 1.5);
-  topSoftbox.lookAt(0, 0, 0);
-  edgeSoftbox.position.set(4.2, 1.8, -2.5);
-  edgeSoftbox.lookAt(0, 0, 0);
-  lightRig.add(leftSoftbox, topSoftbox, edgeSoftbox);
-
-  return lightRig;
 }
 
 function polishCarMaterials(model: Group) {
