@@ -9,6 +9,7 @@ import { OverviewPage } from '../pages/OverviewPage';
 import { downloadLocalStorageBackup, importLocalStorageBackup } from '../storage/localStorageBackup';
 
 const DASHBOARD_STORAGE_KEY = 'growly-dashboard-inputs-v1';
+const CarPage = lazy(() => import('../pages/CarPage').then((module) => ({ default: module.CarPage })));
 const ContactPage = lazy(() => import('../pages/ContactPage').then((module) => ({ default: module.ContactPage })));
 const DetailsPage = lazy(() => import('../pages/DetailsPage').then((module) => ({ default: module.DetailsPage })));
 const ExpensesPage = lazy(() => import('../pages/ExpensesPage').then((module) => ({ default: module.ExpensesPage })));
@@ -195,6 +196,7 @@ export function Dashboard() {
                   />
                 }
               />
+              <Route path="/car" element={<CarPage />} />
               <Route path="/mortgage" element={<MortgagePage dashboardAssets={assets} />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />

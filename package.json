@@ -16,11 +16,13 @@
     "react-dom": "latest",
     "react-router-dom": "^7.17.0",
     "recharts": "^3.8.1",
-    "tailwindcss": "latest"
+    "tailwindcss": "latest",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "latest",
     "rollup-plugin-visualizer": "^7.0.1",
     "typescript": "latest",

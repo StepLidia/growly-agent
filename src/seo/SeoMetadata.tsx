@@ -46,6 +46,11 @@ const routeSeoMetadata: RouteSeoMetadata[] = [
       'Compare Swiss mortgage costs, repayment scenarios, ownership expenses, and renting alternatives with an interactive mortgage calculator.',
   },
   {
+    path: '/car',
+    title: 'Car Financing - Growly',
+    description: 'Compare leasing vs credit for car financing, calculate monthly payments and net gain after several years.',
+  },
+  {
     path: '/progress',
     title: 'Wealth Progress Tracker - Growly',
     description:

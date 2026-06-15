@@ -1,4 +1,4 @@
-import { BarChart3, CircleUserRound, Coffee, Footprints, Home, LayoutDashboard, LineChart, ReceiptText, X } from 'lucide-react';
+import { BarChart3, Car, CircleUserRound, Coffee, Footprints, Home, LayoutDashboard, LineChart, ReceiptText, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const TWINT_THANK_YOU_URL = 'https://go.twint.ch/1/e/tw?tw=acq.SF-CFeDKQsSG4gqPKxcsn8YTI9RPFXNHoXvteLRjOMDbzGBzll4KLhW-DGK4jmcK.';
@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Details', icon: BarChart3, to: '/details', end: true },
   { label: 'Progress', icon: LineChart, to: '/progress', end: true },
   { label: 'Expenses', icon: ReceiptText, to: '/expenses', end: false },
+  { label: 'Car', icon: Car, to: '/car', end: true },
   { label: 'Mortgage', icon: Home, to: '/mortgage', end: true },
   { label: 'Contact', icon: CircleUserRound, to: '/contact', end: true },
 ] satisfies Array<{ label: string; icon: typeof BarChart3; to: string; end: boolean }>;
