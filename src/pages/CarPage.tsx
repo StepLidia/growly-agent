@@ -63,25 +63,25 @@ export function CarPage() {
         </p>
       </header>
 
-      <div className="grid gap-5 md:grid-cols-5">
-        <article className="rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 p-px shadow-2xl shadow-slate-400/85 md:col-span-2">
+      <div className="grid gap-5 xl:grid-cols-5">
+        <article className="rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 p-px shadow-2xl shadow-slate-400/85 xl:col-span-2">
           <div className="relative overflow-hidden rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 backdrop-blur-2xl">
             <CarModelViewer />
             <CarModelCredit />
           </div>
         </article>
-        <div className="grid min-w-0 gap-3 md:col-span-3 xl:grid-cols-2">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:col-span-3">
           <CarFinancingCard
             icon={Car}
             iconClassName="bg-blue-500/10 text-blue-600"
             title="Leasing"
           >
-            <CarTextField id="leasingVehiclePrice" label="Vehicle price" prefix="CHF" value={formValues.leasingVehiclePrice} onChange={updateField} />
-            <CarTextField id="leasingDownPayment" label="Down payment" prefix="CHF" value={formValues.leasingDownPayment} onChange={updateField} />
+            <CarTextField id="leasingVehiclePrice" label="Vehicle price" suffix="CHF" value={formValues.leasingVehiclePrice} onChange={updateField} />
+            <CarTextField id="leasingDownPayment" label="Down payment" suffix="CHF" value={formValues.leasingDownPayment} onChange={updateField} />
             <CarTextField id="leasingDuration" label="Lease duration" suffix="months" value={formValues.leasingDuration} onChange={updateField} />
             <CarTextField id="leasingRate" label="Lease rate" suffix="%" value={formValues.leasingRate} onChange={updateField} />
             <CarTextField id="leasingAnnualMileage" label="Annual mileage" suffix="km" value={formValues.leasingAnnualMileage} onChange={updateField} />
-            <CarTextField id="leasingResidualValue" label="Residual value" prefix="CHF" value={formValues.leasingResidualValue} onChange={updateField} />
+            <CarTextField id="leasingResidualValue" label="Residual value" suffix="CHF" value={formValues.leasingResidualValue} onChange={updateField} />
             <CarToggleField
               id="leasingBuyoutOption"
               label="Buyout option at the end"
@@ -94,21 +94,21 @@ export function CarPage() {
             iconClassName="bg-emerald-500/10 text-emerald-600"
             title="Credit"
           >
-            <CarTextField id="creditVehiclePrice" label="Vehicle price" prefix="CHF" value={formValues.creditVehiclePrice} onChange={updateField} />
-            <CarTextField id="creditDownPayment" label="Down payment" prefix="CHF" value={formValues.creditDownPayment} onChange={updateField} />
+            <CarTextField id="creditVehiclePrice" label="Vehicle price" suffix="CHF" value={formValues.creditVehiclePrice} onChange={updateField} />
+            <CarTextField id="creditDownPayment" label="Down payment" suffix="CHF" value={formValues.creditDownPayment} onChange={updateField} />
             <CarTextField id="creditDuration" label="Loan duration" suffix="months" value={formValues.creditDuration} onChange={updateField} />
             <CarTextField id="creditInterestRate" label="Interest rate" suffix="%" value={formValues.creditInterestRate} onChange={updateField} />
             <CarTextField
               id="creditEstimatedTaxAdvantage"
               label="Est. tax advantage per year"
-              prefix="CHF"
+              suffix="CHF"
               value={formValues.creditEstimatedTaxAdvantage}
               onChange={updateField}
             />
             <CarTextField
               id="creditExpectedResaleValue"
               label="Est. resale value"
-              prefix="CHF"
+              suffix="CHF"
               value={formValues.creditExpectedResaleValue}
               onChange={updateField}
             />
@@ -149,14 +149,12 @@ function CarTextField({
   id,
   label,
   onChange,
-  prefix,
   suffix,
   value,
 }: {
   id: string;
   label: string;
   onChange: (id: string, value: string) => void;
-  prefix?: string;
   suffix?: string;
   value: string | boolean;
 }) {
@@ -172,7 +170,6 @@ function CarTextField({
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(id, event.currentTarget.value)}
         />
-        {prefix && <span className="text-sm font-normal text-slate-600">{prefix}</span>}
         {suffix && <span className="whitespace-nowrap text-sm font-normal text-slate-600">{suffix}</span>}
       </span>
     </label>
