@@ -37,9 +37,7 @@ export function CarPage() {
       </header>
 
       <div className="grid gap-5 md:grid-cols-5">
-        <article className="relative overflow-hidden rounded-2xl border border-white/65 bg-linear-to-br from-slate-100 via-slate-200 to-slate-50 shadow-2xl shadow-slate-400/25 backdrop-blur-2xl md:col-span-2">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_58%,rgba(15,23,42,.34),transparent_36%),radial-gradient(ellipse_at_48%_54%,rgba(100,116,139,.24),transparent_58%),radial-gradient(circle_at_50%_0%,rgba(255,255,255,.88),transparent_34%),linear-gradient(180deg,rgba(248,250,252,.72),rgba(203,213,225,.42)_52%,rgba(241,245,249,.72))]" />
-          <div className="pointer-events-none absolute inset-x-10 bottom-9 h-16 rounded-full bg-slate-950/22 blur-3xl" />
+        <article className="relative overflow-hidden rounded-2xl border border-slate-200/65 bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 shadow-2xl shadow-slate-400/85 backdrop-blur-2xl md:col-span-2">
           <CarModelViewer />
         </article>
       </div>
