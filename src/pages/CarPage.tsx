@@ -8,7 +8,10 @@ import {
   Group,
   Material,
   Mesh,
+  MeshPhysicalMaterial,
+  MeshStandardMaterial,
   PerspectiveCamera,
+  RectAreaLight,
   Scene,
   SRGBColorSpace,
   Vector3,
@@ -16,6 +19,7 @@ import {
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 
 const CAR_MODEL_PATH = '/models/McLaren.optimized.glb';
@@ -33,9 +37,9 @@ export function CarPage() {
       </header>
 
       <div className="grid gap-5 md:grid-cols-5">
-        <article className="relative overflow-hidden rounded-2xl border border-white/45 bg-linear-to-br from-slate-500/75 via-slate-300/70 to-blue-300/55 shadow-2xl shadow-slate-500/30 backdrop-blur-2xl md:col-span-2">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,255,255,.36),transparent_34%),radial-gradient(circle_at_18%_78%,rgba(51,65,85,.38),transparent_44%),radial-gradient(circle_at_88%_74%,rgba(30,64,175,.18),transparent_40%),linear-gradient(180deg,rgba(203,213,225,.22),rgba(100,116,139,.36))]" />
-          <div className="pointer-events-none absolute inset-x-8 bottom-12 h-24 rounded-full bg-slate-950/28 blur-3xl" />
+        <article className="relative overflow-hidden rounded-2xl border border-white/55 bg-linear-to-br from-slate-200 via-slate-300 to-slate-100 shadow-2xl shadow-slate-400/25 backdrop-blur-2xl md:col-span-2">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_55%,rgba(51,65,85,.42),transparent_48%),radial-gradient(ellipse_at_48%_50%,rgba(100,116,139,.28),transparent_66%),linear-gradient(135deg,rgba(248,250,252,.52),rgba(148,163,184,.36)_48%,rgba(241,245,249,.58))]" />
+          <div className="pointer-events-none absolute inset-x-12 bottom-10 h-14 rounded-full bg-slate-900/24 blur-3xl" />
           <CarModelViewer />
         </article>
       </div>
@@ -56,9 +60,10 @@ function CarModelViewer() {
 
     const scene = new Scene();
     scene.background = null;
+    RectAreaLightUniformsLib.init();
 
     const camera = new PerspectiveCamera(34, 1, 0.1, 100);
-    camera.position.set(0, 1.25, 8.2);
+    camera.position.set(0, 0.95, 7);
 
     const renderer = new WebGLRenderer({ antialias: true, alpha: true });
     renderer.setClearColor(new Color('#000000'), 0);
@@ -74,18 +79,19 @@ function CarModelViewer() {
     controls.enableDamping = true;
     controls.enablePan = false;
     controls.maxDistance = 9.5;
-    controls.minDistance = 5.8;
+    controls.minDistance = 5.4;
     controls.target.set(0, 0, 0);
 
     const ambientLight = new AmbientLight('#cbd5e1', 1.8);
     const keyLight = new DirectionalLight('#ffffff', 3.9);
     keyLight.position.set(3.8, 4.8, 5);
     keyLight.castShadow = true;
-    const fillLight = new DirectionalLight('#bfdbfe', 1.35);
+    const fillLight = new DirectionalLight('#f8fafc', 1.25);
     fillLight.position.set(-4, 2.4, 3);
-    const rimLight = new DirectionalLight('#cbd5e1', 2.6);
+    const rimLight = new DirectionalLight('#e5e7eb', 2.2);
     rimLight.position.set(-3, 3.2, -4);
-    scene.add(ambientLight, keyLight, fillLight, rimLight);
+    const studioLights = createStudioLights();
+    scene.add(ambientLight, keyLight, fillLight, rimLight, studioLights);
 
     let animationFrameId = 0;
     let isMounted = true;
@@ -113,6 +119,7 @@ function CarModelViewer() {
           return;
         }
 
+        polishCarMaterials(gltf.scene);
         loadedModel = centerModel(gltf.scene);
         scene.add(loadedModel);
         setModelState('ready');
@@ -127,6 +134,9 @@ function CarModelViewer() {
     );
 
     const renderFrame = () => {
+      const elapsedSeconds = performance.now() * 0.001;
+
+      studioLights.rotation.y = Math.sin(elapsedSeconds * 0.35) * 0.22;
       controls.update();
       renderer.render(scene, camera);
       animationFrameId = window.requestAnimationFrame(renderFrame);
@@ -152,7 +162,7 @@ function CarModelViewer() {
   return (
     <div
       ref={canvasHostRef}
-      className="relative z-10 h-[17rem] w-full sm:h-[22rem] md:h-[calc(100vh-13rem)] md:min-h-[24rem]"
+      className="relative z-10 h-[15rem] w-full sm:h-[19rem] md:h-[28rem]"
     >
       {modelState !== 'ready' && (
         <div className="absolute inset-0 z-10 grid place-items-center">
@@ -174,18 +184,69 @@ function disposeMaterial(material: Material | Material[]) {
   material.dispose();
 }
 
+function createStudioLights() {
+  const lightRig = new Group();
+  const leftSoftbox = new RectAreaLight('#ffffff', 5.2, 4.8, 2.2);
+  const topSoftbox = new RectAreaLight('#f8fafc', 4.4, 4.4, 1.4);
+  const edgeSoftbox = new RectAreaLight('#f1f5f9', 2.5, 2.4, 2.6);
+
+  leftSoftbox.position.set(-3.8, 2.4, 2.8);
+  leftSoftbox.lookAt(0, 0, 0);
+  topSoftbox.position.set(0.5, 4.3, 1.5);
+  topSoftbox.lookAt(0, 0, 0);
+  edgeSoftbox.position.set(4.2, 1.8, -2.5);
+  edgeSoftbox.lookAt(0, 0, 0);
+  lightRig.add(leftSoftbox, topSoftbox, edgeSoftbox);
+
+  return lightRig;
+}
+
+function polishCarMaterials(model: Group) {
+  model.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return;
+    }
+
+    child.castShadow = true;
+    child.receiveShadow = true;
+    polishMaterial(child.material);
+  });
+}
+
+function polishMaterial(material: Material | Material[]) {
+  if (Array.isArray(material)) {
+    material.forEach(polishMaterial);
+    return;
+  }
+
+  if (material instanceof MeshPhysicalMaterial) {
+    material.roughness = Math.min(material.roughness, 0.28);
+    material.metalness = Math.max(material.metalness, 0.08);
+    material.clearcoat = Math.max(material.clearcoat, 0.72);
+    material.clearcoatRoughness = Math.min(material.clearcoatRoughness, 0.18);
+    material.needsUpdate = true;
+    return;
+  }
+
+  if (material instanceof MeshStandardMaterial) {
+    material.roughness = Math.min(material.roughness, 0.32);
+    material.metalness = Math.max(material.metalness, 0.06);
+    material.needsUpdate = true;
+  }
+}
+
 function centerModel(model: Group) {
   const bounds = new Box3().setFromObject(model);
   const size = bounds.getSize(new Vector3());
   const center = bounds.getCenter(new Vector3());
   const largestSide = Math.max(size.x, size.y, size.z);
-  const scale = largestSide > 0 ? 3.85 / largestSide : 1;
+  const scale = largestSide > 0 ? 4.55 / largestSide : 1;
   const pivot = new Group();
 
   model.scale.setScalar(scale);
   model.position.set(
     -center.x * scale,
-    -center.y * scale,
+    -center.y * scale - size.y * scale * 0.03,
     -center.z * scale,
   );
   pivot.rotation.y = -0.5;
