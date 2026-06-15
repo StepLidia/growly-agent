@@ -137,7 +137,7 @@ export function OverviewPage({ dashboard, projectionYears }: OverviewPageProps) 
       </div>
       <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center gap-5 md:gap-7">
         <div className="max-w-4xl text-center mt-4">
-          <h1 className="font-serif text-4xl font-black tracking-normal text-slate-800 md:text-4xl 2xl:text-5xl">
+          <h1 className="text-4xl font-bold tracking-normal text-slate-800 md:text-4xl 2xl:text-5xl">
             Track your financial future
           </h1>
           <p className="mt-5 text-lg font-bold text-slate-600 md:text-xl">
