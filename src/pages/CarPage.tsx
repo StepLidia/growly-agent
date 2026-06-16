@@ -90,9 +90,9 @@ export function CarPage() {
       </header>
 
       <div className="grid gap-5 xl:grid-cols-5">
-        <div className="space-y-3 xl:col-span-2">
-          <article className="rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 p-px shadow-2xl shadow-slate-400/85">
-            <div className="relative overflow-hidden rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 backdrop-blur-2xl">
+        <div className="flex h-full min-h-0 flex-col gap-3 xl:col-span-2">
+          <article className="flex min-h-0 flex-1 rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 p-px shadow-2xl shadow-slate-400/85">
+            <div className="relative h-full w-full overflow-hidden rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 backdrop-blur-2xl">
               <CarModelViewer />
               <CarModelCredit />
             </div>
@@ -514,7 +514,7 @@ function CarModelViewer() {
   return (
     <div
       ref={canvasHostRef}
-      className="relative z-10 h-60 w-full sm:h-76 md:h-112"
+      className="relative z-10 h-full min-h-60 w-full sm:min-h-76 md:min-h-112"
     >
       {modelState !== 'ready' && (
         <div className="absolute inset-0 z-10 grid place-items-center">

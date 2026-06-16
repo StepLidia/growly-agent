@@ -103,7 +103,7 @@ export function CarFinancingCharts({
         leasingResidualValue={leasingResidualValue}
         leasingSummary={leasingSummary}
         metric="monthlyPayment"
-        subtitle="Monthly payment schedule over the selected horizon"
+        subtitle="Monthly payments"
         title="Payments per Month"
       />
       <CarFinancingChartCard
@@ -314,7 +314,7 @@ function CarFinancingChartCard({
       </div>
       <p className="mt-1 text-center text-sm font-semibold text-slate-600">Years</p>
       {metric === 'monthlyPayment' && (
-        <div className="mt-3 rounded-lg border border-slate-200/50 bg-slate-200/35 px-3 py-3 text-sm font-bold text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
+        <div className="mt-3 rounded-lg border border-slate-200/50 bg-slate-200/75 px-3 py-3 text-sm font-bold text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
           Total money paid at the end:{' '}
           <span className="text-blue-700">
             Leasing {currency(calculateLeasingTotalMoneyPaid({ buyoutOption: leasingBuyoutOption, downPayment: leasingDownPayment, residualValue: leasingResidualValue, summary: leasingSummary }))} CHF
@@ -343,8 +343,8 @@ function CarFinancingChartCard({
         </div>
       )}
       {metric === 'netGain' && (
-        <div className="mt-3 rounded-lg border border-slate-200/50 bg-slate-200/35 px-3 py-3 text-sm font-bold text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
-          Car value deprecates linearly from initial price towards resale value
+        <div className="mt-3 rounded-lg border border-slate-200/50 bg-slate-200/75 px-3 py-3 text-sm font-bold text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
+          Car value is assumed to deprecate linearly from initial price towards resale value
         </div>
       )}
     </article>
