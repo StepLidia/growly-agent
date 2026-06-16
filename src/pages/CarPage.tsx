@@ -96,7 +96,7 @@ export function CarPage() {
           Car financing
         </h1>
         <p className="mt-2 text-sm text-slate-700">
-          Compare Leasing vs Credit (In progress)
+          Compare Leasing vs Credit
         </p>
       </header>
 

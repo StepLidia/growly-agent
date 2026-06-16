@@ -103,7 +103,7 @@ export function CarFinancingCharts({
         leasingResidualValue={leasingResidualValue}
         leasingSummary={leasingSummary}
         metric="monthlyPayment"
-        subtitle="Monthly payments"
+        subtitle="Principal + Interest"
         title="Payments per Month"
       />
       <CarFinancingChartCard
@@ -327,7 +327,7 @@ function CarFinancingChartCard({
             <button
               aria-describedby="credit-total-tax-savings-tooltip"
               aria-label="Credit total includes tax savings"
-              className="text-pink-400 transition hover:text-pink-500 focus:outline-none"
+              className="text-emerald-500 transition hover:text-rose-500 focus:outline-none"
               type="button"
             >
               *
