@@ -100,8 +100,8 @@ export function CarPage() {
         </p>
       </header>
 
-      <div className="grid gap-5 xl:grid-cols-5">
-        <div className="flex h-full min-h-0 flex-col gap-3 xl:col-span-2">
+      <div className="grid gap-5 2xl:grid-cols-5">
+        <div className="flex h-full min-h-0 flex-col gap-3 2xl:col-span-2">
           <article className="flex min-h-0 flex-1 rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 p-px shadow-2xl shadow-slate-400/85">
             <div className="relative h-full w-full overflow-hidden rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 backdrop-blur-2xl">
               <CarModelViewer />
@@ -113,7 +113,7 @@ export function CarPage() {
             onChange={setPlanningHorizon}
           />
         </div>
-        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:col-span-3">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 2xl:col-span-3">
           <CarFinancingCard
             icon={Car}
             iconClassName="bg-blue-500/10 text-blue-600"

@@ -169,12 +169,12 @@ function CarFinancingChartCard({
 
   return (
     <article className="glass-panel min-w-0 p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-start 2xl:justify-between">
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-slate-950">{title}</h2>
           <p className="mt-1 text-xs font-medium text-slate-600">{subtitle}</p>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+        <div className="flex shrink-0 flex-wrap gap-2 2xl:justify-end">
           <BorrowedBadge label="Leasing" value={leasingSummary.financedAmount} variant="leasing" />
           <BorrowedBadge label="Credit" value={creditSummary.financedAmount} variant="credit" />
         </div>
