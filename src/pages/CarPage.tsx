@@ -213,12 +213,14 @@ function CarModelCredit() {
     <div className="group absolute bottom-2 left-2 z-20">
       <button
         aria-label="Show car model credit"
-        className="grid h-4 w-4 place-items-center text-slate-600/80 transition hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700/20"
+        aria-describedby="car-model-credit-tooltip"
+        className="grid h-4 w-4 place-items-center text-slate-600/80 transition hover:text-slate-900 focus:outline-none"
         type="button"
       >
         <Info className="h-3 w-3" />
       </button>
       <span
+        id="car-model-credit-tooltip"
         role="tooltip"
         className={tooltipClasses('bottom-5 left-0 w-72 px-3 py-2 text-left leading-5')}
       >

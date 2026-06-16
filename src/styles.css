@@ -316,6 +316,10 @@ input[type="number"]::-webkit-inner-spin-button {
     0 3px 10px rgba(80, 99, 130, 0.06);
 }
 
+.group[data-tooltip-open="true"] [role="tooltip"] {
+  opacity: 1;
+}
+
 .overview-current-card {
   border-color: rgba(183, 198, 161, 0.78);
   background-color: rgba(242, 246, 234, 0.82);

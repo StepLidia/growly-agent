@@ -50,26 +50,48 @@ export function Dashboard() {
   }, [importStatus]);
 
   useEffect(() => {
-    function focusTooltipTrigger(event: PointerEvent) {
+    function closeTooltip(host: HTMLElement) {
+      host.removeAttribute('data-tooltip-open');
+    }
+
+    function toggleTooltip(event: MouseEvent) {
       const target = event.target instanceof Element
         ? event.target.closest<HTMLElement>('[aria-describedby]')
         : null;
+      const openHosts = Array.from(document.querySelectorAll<HTMLElement>('[data-tooltip-open="true"]'));
 
       if (target) {
-        target.focus({ preventScroll: true });
+        const tooltipId = target.getAttribute('aria-describedby');
+        const tooltip = tooltipId ? document.getElementById(tooltipId) : null;
+        const host = target.closest<HTMLElement>('.group');
+
+        if (!tooltip || tooltip.getAttribute('role') !== 'tooltip' || !host) {
+          return;
+        }
+
+        const isOpen = host.getAttribute('data-tooltip-open') === 'true';
+
+        openHosts.forEach((openHost) => {
+          if (openHost !== host) {
+            closeTooltip(openHost);
+          }
+        });
+
+        if (isOpen) {
+          closeTooltip(host);
+        } else {
+          host.setAttribute('data-tooltip-open', 'true');
+        }
+
         return;
       }
 
-      const activeElement = document.activeElement;
-
-      if (activeElement instanceof HTMLElement && activeElement.hasAttribute('aria-describedby')) {
-        activeElement.blur();
-      }
+      openHosts.forEach(closeTooltip);
     }
 
-    document.addEventListener('pointerdown', focusTooltipTrigger, true);
+    document.addEventListener('click', toggleTooltip, true);
 
-    return () => document.removeEventListener('pointerdown', focusTooltipTrigger, true);
+    return () => document.removeEventListener('click', toggleTooltip, true);
   }, []);
 
   function updateAsset(
