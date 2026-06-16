@@ -20,8 +20,10 @@ import { currency } from '../finance';
 type CarFinancingChartsProps = {
   creditAnnualInterestRate: number;
   creditAnnualTaxAdvantage: number;
+  creditDownPayment: number;
   creditExpectedResaleValue: number;
   creditSummary: CarFinancingSummary;
+  creditVehiclePrice: number;
   horizonYears: number;
   leasingAnnualInterestRate: number;
   leasingBuyoutOption: boolean;
@@ -47,12 +49,16 @@ const carBorrowedBadgeClasses = {
   credit: 'border-emerald-300/50 bg-emerald-500/10 text-emerald-700',
   leasing: 'border-blue-300/50 bg-blue-500/10 text-blue-700',
 };
+const leasingInterestColor = '#fb7185';
+const creditInterestColor = '#dc2626';
 
 export function CarFinancingCharts({
   creditAnnualInterestRate,
   creditAnnualTaxAdvantage,
+  creditDownPayment,
   creditExpectedResaleValue,
   creditSummary,
+  creditVehiclePrice,
   horizonYears,
   leasingAnnualInterestRate,
   leasingBuyoutOption,
@@ -62,8 +68,10 @@ export function CarFinancingCharts({
   const points = buildCarChartPoints({
     creditAnnualInterestRate,
     creditAnnualTaxAdvantage,
+    creditDownPayment,
     creditExpectedResaleValue,
     creditSummary,
+    creditVehiclePrice,
     horizonYears,
     leasingAnnualInterestRate,
     leasingBuyoutOption,
@@ -146,8 +154,8 @@ function CarFinancingChartCard({
         <ChartLegendItem color={colorClasses.emerald.stroke} label="Credit" />
         {metric === 'monthlyPayment' && (
           <>
-            <ChartLegendItem color="#60a5fa" dashed label="Leasing interest" />
-            <ChartLegendItem color="#34d399" dashed label="Credit interest" />
+            <ChartLegendItem color={leasingInterestColor} dashed label="Leasing interest" />
+            <ChartLegendItem color={creditInterestColor} dashed label="Credit interest" />
           </>
         )}
       </div>
@@ -222,13 +230,13 @@ function CarFinancingChartCard({
             {metric === 'monthlyPayment' && (
               <>
                 <Area
-                  activeDot={{ r: 4, fill: '#60a5fa', stroke: 'white', strokeWidth: 2 }}
+                  activeDot={{ r: 4, fill: leasingInterestColor, stroke: 'white', strokeWidth: 2 }}
                   dataKey="leasingMonthlyInterestCost"
                   dot={false}
                   fill="transparent"
                   isAnimationActive={false}
                   name="Leasing interest"
-                  stroke="#60a5fa"
+                  stroke={leasingInterestColor}
                   strokeDasharray="4 5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -236,13 +244,13 @@ function CarFinancingChartCard({
                   type="monotone"
                 />
                 <Area
-                  activeDot={{ r: 4, fill: '#34d399', stroke: 'white', strokeWidth: 2 }}
+                  activeDot={{ r: 4, fill: creditInterestColor, stroke: 'white', strokeWidth: 2 }}
                   dataKey="creditMonthlyInterestCost"
                   dot={false}
                   fill="transparent"
                   isAnimationActive={false}
                   name="Credit interest"
-                  stroke="#34d399"
+                  stroke={creditInterestColor}
                   strokeDasharray="4 5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -316,8 +324,8 @@ function CarFinancingTooltip({ active, label, metric, payload }: CarFinancingToo
       <p className="text-emerald-700">Credit: {currency(creditValue)} CHF</p>
       {metric === 'monthlyPayment' && typeof leasingInterestValue === 'number' && typeof creditInterestValue === 'number' && (
         <>
-          <p className="mt-1 text-blue-400">Leasing interest: {currency(leasingInterestValue)} CHF</p>
-          <p className="text-emerald-400">Credit interest: {currency(creditInterestValue)} CHF</p>
+          <p className="mt-1 text-rose-400">Leasing interest: {currency(leasingInterestValue)} CHF</p>
+          <p className="text-red-600">Credit interest: {currency(creditInterestValue)} CHF</p>
         </>
       )}
     </div>
@@ -327,8 +335,10 @@ function CarFinancingTooltip({ active, label, metric, payload }: CarFinancingToo
 function buildCarChartPoints({
   creditAnnualInterestRate,
   creditAnnualTaxAdvantage,
+  creditDownPayment,
   creditExpectedResaleValue,
   creditSummary,
+  creditVehiclePrice,
   horizonYears,
   leasingAnnualInterestRate,
   leasingBuyoutOption,
@@ -347,7 +357,9 @@ function buildCarChartPoints({
   });
   const netGainPoints = buildCarNetGainProjection({
     creditAnnualTaxAdvantage,
+    creditDownPayment,
     creditExpectedResaleValue,
+    creditVehiclePrice,
     creditSummary,
     horizonYears,
     leasingBuyoutOption,

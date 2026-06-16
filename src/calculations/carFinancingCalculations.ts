@@ -128,6 +128,8 @@ export function buildCarFinancingProjection({
 export function buildCarNetGainProjection({
   creditAnnualTaxAdvantage,
   creditExpectedResaleValue,
+  creditDownPayment,
+  creditVehiclePrice,
   creditSummary,
   horizonYears,
   leasingBuyoutOption,
@@ -136,6 +138,8 @@ export function buildCarNetGainProjection({
 }: {
   creditAnnualTaxAdvantage: number;
   creditExpectedResaleValue: number;
+  creditDownPayment: number;
+  creditVehiclePrice: number;
   creditSummary: CarFinancingSummary;
   horizonYears: number;
   leasingBuyoutOption: boolean;
@@ -144,15 +148,20 @@ export function buildCarNetGainProjection({
 }): CarNetGainProjectionPoint[] {
   const horizonMonths = normalizeDuration(horizonYears * 12);
   const safeCreditResaleValue = normalizeMoney(creditExpectedResaleValue);
+  const safeCreditDownPayment = normalizeMoney(creditDownPayment);
+  const safeCreditVehiclePrice = normalizeMoney(creditVehiclePrice);
   const safeCreditTaxAdvantagePerMonth = normalizeMoney(creditAnnualTaxAdvantage) / 12;
   const safeLeasingResidualValue = normalizeMoney(leasingResidualValue);
 
   return Array.from({ length: horizonMonths + 1 }, (_, month) => {
     const creditPaidMonths = Math.min(month, creditSummary.durationMonths);
     const leasingPaidMonths = Math.min(month, leasingSummary.durationMonths);
-    const creditOwnershipEquity = horizonMonths > 0
-      ? safeCreditResaleValue * Math.min(month / horizonMonths, 1)
-      : safeCreditResaleValue;
+    const creditOwnershipEquity = calculateLinearValue({
+      endValue: safeCreditResaleValue,
+      horizonMonths,
+      month,
+      startValue: safeCreditVehiclePrice,
+    });
     const leasingBuyoutEquity = leasingBuyoutOption && month >= leasingSummary.durationMonths
       ? safeLeasingResidualValue
       : 0;
@@ -160,6 +169,7 @@ export function buildCarNetGainProjection({
     return {
       creditNetGain:
         creditOwnershipEquity
+        - safeCreditDownPayment
         - creditSummary.monthlyPayment * creditPaidMonths
         + safeCreditTaxAdvantagePerMonth * month,
       leasingNetGain:
@@ -168,6 +178,26 @@ export function buildCarNetGainProjection({
       year: month / 12,
     };
   });
+}
+
+function calculateLinearValue({
+  endValue,
+  horizonMonths,
+  month,
+  startValue,
+}: {
+  endValue: number;
+  horizonMonths: number;
+  month: number;
+  startValue: number;
+}) {
+  if (horizonMonths <= 0) {
+    return endValue;
+  }
+
+  const progress = Math.min(Math.max(month / horizonMonths, 0), 1);
+
+  return startValue + (endValue - startValue) * progress;
 }
 
 function calculateMonthlyPayment({

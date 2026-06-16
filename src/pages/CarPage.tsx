@@ -158,7 +158,9 @@ export function CarPage() {
       <CarFinancingCharts
         creditAnnualInterestRate={creditInterestRate}
         creditAnnualTaxAdvantage={parseCarMoneyInput(formValues.creditEstimatedTaxAdvantage)}
+        creditDownPayment={parseCarMoneyInput(formValues.creditDownPayment)}
         creditExpectedResaleValue={parseCarMoneyInput(formValues.creditExpectedResaleValue)}
+        creditVehiclePrice={parseCarMoneyInput(formValues.creditVehiclePrice)}
         creditSummary={creditSummary}
         horizonYears={planningHorizon}
         leasingAnnualInterestRate={leasingRate}

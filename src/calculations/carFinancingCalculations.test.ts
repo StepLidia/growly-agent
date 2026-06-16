@@ -102,7 +102,9 @@ describe('car financing calculations', () => {
     });
     const points = buildCarNetGainProjection({
       creditAnnualTaxAdvantage: 1200,
+      creditDownPayment: 10000,
       creditExpectedResaleValue: 24000,
+      creditVehiclePrice: 50000,
       creditSummary,
       horizonYears: 2,
       leasingBuyoutOption: true,
@@ -111,9 +113,10 @@ describe('car financing calculations', () => {
     });
 
     expect(points).toHaveLength(25);
-    expect(points[0]).toEqual({ creditNetGain: 0, leasingNetGain: 0, year: 0 });
+    expect(points[0]).toEqual({ creditNetGain: 40000, leasingNetGain: 0, year: 0 });
     expect(points[12].leasingNetGain).toBeCloseTo(10000 - leasingSummary.monthlyPayment * 12, 2);
     expect(points[24].leasingNetGain).toBeCloseTo(10000 - leasingSummary.monthlyPayment * 12, 2);
-    expect(points[24].creditNetGain).toBeCloseTo(24000 - creditSummary.monthlyPayment * 12 + 2400, 2);
+    expect(points[12].creditNetGain).toBeCloseTo(37000 - 10000 - creditSummary.monthlyPayment * 12 + 1200, 2);
+    expect(points[24].creditNetGain).toBeCloseTo(24000 - 10000 - creditSummary.monthlyPayment * 12 + 2400, 2);
   });
 });
