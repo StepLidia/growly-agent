@@ -16,7 +16,14 @@ export type CarFinancingSummary = {
 
 export type CarFinancingProjectionPoint = {
   cumulativeInterestCost: number;
+  monthlyInterestCost: number;
   monthlyPayment: number;
+  year: number;
+};
+
+export type CarNetGainProjectionPoint = {
+  creditNetGain: number;
+  leasingNetGain: number;
   year: number;
 };
 
@@ -98,17 +105,66 @@ export function buildCarFinancingProjection({
   let cumulativeInterestCost = 0;
 
   return Array.from({ length: horizonMonths + 1 }, (_, month) => {
+    let monthlyInterestCost = 0;
+
     if (month > 0 && month <= summary.durationMonths && balance > 0) {
       const interestCost = balance * monthlyRate;
       const principalPayment = Math.max(summary.monthlyPayment - interestCost, 0);
 
+      monthlyInterestCost = interestCost;
       cumulativeInterestCost += interestCost;
       balance = Math.max(balance - principalPayment, 0);
     }
 
     return {
       cumulativeInterestCost,
+      monthlyInterestCost,
       monthlyPayment: month <= summary.durationMonths ? summary.monthlyPayment : 0,
+      year: month / 12,
+    };
+  });
+}
+
+export function buildCarNetGainProjection({
+  creditAnnualTaxAdvantage,
+  creditExpectedResaleValue,
+  creditSummary,
+  horizonYears,
+  leasingBuyoutOption,
+  leasingResidualValue,
+  leasingSummary,
+}: {
+  creditAnnualTaxAdvantage: number;
+  creditExpectedResaleValue: number;
+  creditSummary: CarFinancingSummary;
+  horizonYears: number;
+  leasingBuyoutOption: boolean;
+  leasingResidualValue: number;
+  leasingSummary: CarFinancingSummary;
+}): CarNetGainProjectionPoint[] {
+  const horizonMonths = normalizeDuration(horizonYears * 12);
+  const safeCreditResaleValue = normalizeMoney(creditExpectedResaleValue);
+  const safeCreditTaxAdvantagePerMonth = normalizeMoney(creditAnnualTaxAdvantage) / 12;
+  const safeLeasingResidualValue = normalizeMoney(leasingResidualValue);
+
+  return Array.from({ length: horizonMonths + 1 }, (_, month) => {
+    const creditPaidMonths = Math.min(month, creditSummary.durationMonths);
+    const leasingPaidMonths = Math.min(month, leasingSummary.durationMonths);
+    const creditOwnershipEquity = horizonMonths > 0
+      ? safeCreditResaleValue * Math.min(month / horizonMonths, 1)
+      : safeCreditResaleValue;
+    const leasingBuyoutEquity = leasingBuyoutOption && month >= leasingSummary.durationMonths
+      ? safeLeasingResidualValue
+      : 0;
+
+    return {
+      creditNetGain:
+        creditOwnershipEquity
+        - creditSummary.monthlyPayment * creditPaidMonths
+        + safeCreditTaxAdvantagePerMonth * month,
+      leasingNetGain:
+        leasingBuyoutEquity
+        - leasingSummary.monthlyPayment * leasingPaidMonths,
       year: month / 12,
     };
   });

@@ -2,6 +2,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -9,6 +10,7 @@ import {
 } from 'recharts';
 import {
   buildCarFinancingProjection,
+  buildCarNetGainProjection,
   type CarFinancingSummary,
 } from '../calculations/carFinancingCalculations';
 import { colorClasses } from '../constants/colors';
@@ -17,19 +19,27 @@ import { currency } from '../finance';
 
 type CarFinancingChartsProps = {
   creditAnnualInterestRate: number;
+  creditAnnualTaxAdvantage: number;
+  creditExpectedResaleValue: number;
   creditSummary: CarFinancingSummary;
   horizonYears: number;
   leasingAnnualInterestRate: number;
+  leasingBuyoutOption: boolean;
+  leasingResidualValue: number;
   leasingSummary: CarFinancingSummary;
 };
 
-type CarChartMetric = 'monthlyPayment' | 'cumulativeInterestCost';
+type CarChartMetric = 'monthlyPayment' | 'netGain';
 
 type CarChartPoint = {
-  creditCumulativeInterestCost: number;
+  creditMonthlyInterestCost: number;
   creditMonthlyPayment: number;
+  creditNetGain: number;
+  leasingMonthlyInterestCost: number;
   leasingCumulativeInterestCost: number;
   leasingMonthlyPayment: number;
+  leasingNetGain: number;
+  month: number;
   year: number;
 };
 
@@ -40,16 +50,24 @@ const carBorrowedBadgeClasses = {
 
 export function CarFinancingCharts({
   creditAnnualInterestRate,
+  creditAnnualTaxAdvantage,
+  creditExpectedResaleValue,
   creditSummary,
   horizonYears,
   leasingAnnualInterestRate,
+  leasingBuyoutOption,
+  leasingResidualValue,
   leasingSummary,
 }: CarFinancingChartsProps) {
   const points = buildCarChartPoints({
     creditAnnualInterestRate,
+    creditAnnualTaxAdvantage,
+    creditExpectedResaleValue,
     creditSummary,
     horizonYears,
     leasingAnnualInterestRate,
+    leasingBuyoutOption,
+    leasingResidualValue,
     leasingSummary,
   });
 
@@ -69,9 +87,9 @@ export function CarFinancingCharts({
         data={points}
         horizonYears={horizonYears}
         leasingSummary={leasingSummary}
-        metric="cumulativeInterestCost"
-        subtitle="Interest paid over time until each financing term ends"
-        title="Cumulative Interest"
+        metric="netGain"
+        subtitle="Net value over the selected horizon"
+        title="Total Net Gain"
       />
     </div>
   );
@@ -94,11 +112,19 @@ function CarFinancingChartCard({
   subtitle: string;
   title: string;
 }) {
-  const leasingKey = metric === 'monthlyPayment' ? 'leasingMonthlyPayment' : 'leasingCumulativeInterestCost';
-  const creditKey = metric === 'monthlyPayment' ? 'creditMonthlyPayment' : 'creditCumulativeInterestCost';
-  const rawMaxValue = Math.max(...data.map((point) => Math.max(point[leasingKey], point[creditKey])), 1);
-  const ticks = buildValueTicks(rawMaxValue);
-  const maxValue = ticks.at(-1) ?? rawMaxValue;
+  const leasingKey = metric === 'monthlyPayment' ? 'leasingMonthlyPayment' : 'leasingNetGain';
+  const creditKey = metric === 'monthlyPayment' ? 'creditMonthlyPayment' : 'creditNetGain';
+  const extraKeys = metric === 'monthlyPayment'
+    ? (['leasingMonthlyInterestCost', 'creditMonthlyInterestCost'] as const)
+    : ([] as const);
+  const values = data.flatMap((point) => [
+    point[leasingKey],
+    point[creditKey],
+    ...extraKeys.map((key) => point[key]),
+  ]);
+  const ticks = metric === 'monthlyPayment' ? buildValueTicks(Math.max(...values, 1)) : buildSignedValueTicks(values);
+  const minValue = ticks[0] ?? 0;
+  const maxValue = ticks.at(-1) ?? 1;
   const maxYear = Math.max(horizonYears, 1);
   const gradientId = `car-${metric}-gradient`;
 
@@ -118,6 +144,12 @@ function CarFinancingChartCard({
       <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-bold text-slate-700">
         <ChartLegendItem color={colorClasses.blue.stroke} label="Leasing" />
         <ChartLegendItem color={colorClasses.emerald.stroke} label="Credit" />
+        {metric === 'monthlyPayment' && (
+          <>
+            <ChartLegendItem color="#60a5fa" dashed label="Leasing interest" />
+            <ChartLegendItem color="#34d399" dashed label="Credit interest" />
+          </>
+        )}
       </div>
 
       <div className="mt-2 h-56 w-full">
@@ -148,7 +180,7 @@ function CarFinancingChartCard({
             />
             <YAxis
               axisLine={false}
-              domain={[0, maxValue]}
+              domain={[minValue, maxValue]}
               tick={{ fill: '#475569', fontSize: 10, fontWeight: 500 }}
               tickFormatter={formatAxisValue}
               tickLine={false}
@@ -187,6 +219,41 @@ function CarFinancingChartCard({
               strokeWidth={3}
               type={metric === 'monthlyPayment' ? 'stepAfter' : 'monotone'}
             />
+            {metric === 'monthlyPayment' && (
+              <>
+                <Area
+                  activeDot={{ r: 4, fill: '#60a5fa', stroke: 'white', strokeWidth: 2 }}
+                  dataKey="leasingMonthlyInterestCost"
+                  dot={false}
+                  fill="transparent"
+                  isAnimationActive={false}
+                  name="Leasing interest"
+                  stroke="#60a5fa"
+                  strokeDasharray="4 5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  type="monotone"
+                />
+                <Area
+                  activeDot={{ r: 4, fill: '#34d399', stroke: 'white', strokeWidth: 2 }}
+                  dataKey="creditMonthlyInterestCost"
+                  dot={false}
+                  fill="transparent"
+                  isAnimationActive={false}
+                  name="Credit interest"
+                  stroke="#34d399"
+                  strokeDasharray="4 5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  type="monotone"
+                />
+              </>
+            )}
+            {metric === 'netGain' && (
+              <ReferenceLine stroke="rgba(71,85,105,.46)" strokeDasharray="4 5" y={0} />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -211,10 +278,13 @@ function BorrowedBadge({
   );
 }
 
-function ChartLegendItem({ color, label }: { color: string; label: string }) {
+function ChartLegendItem({ color, dashed = false, label }: { color: string; dashed?: boolean; label: string }) {
   return (
     <span className="flex items-center gap-2">
-      <span className="h-0.5 w-6" style={{ backgroundColor: color }} />
+      <span
+        className={`h-0.5 w-6 ${dashed ? 'border-t-2 border-dashed bg-transparent' : ''}`}
+        style={dashed ? { borderColor: color } : { backgroundColor: color }}
+      />
       {label}
     </span>
   );
@@ -228,10 +298,12 @@ type CarFinancingTooltipProps = {
 };
 
 function CarFinancingTooltip({ active, label, metric, payload }: CarFinancingTooltipProps) {
-  const leasingKey = metric === 'monthlyPayment' ? 'leasingMonthlyPayment' : 'leasingCumulativeInterestCost';
-  const creditKey = metric === 'monthlyPayment' ? 'creditMonthlyPayment' : 'creditCumulativeInterestCost';
+  const leasingKey = metric === 'monthlyPayment' ? 'leasingMonthlyPayment' : 'leasingNetGain';
+  const creditKey = metric === 'monthlyPayment' ? 'creditMonthlyPayment' : 'creditNetGain';
   const leasingValue = payload?.find(({ dataKey }) => dataKey === leasingKey)?.value;
   const creditValue = payload?.find(({ dataKey }) => dataKey === creditKey)?.value;
+  const leasingInterestValue = payload?.find(({ dataKey }) => dataKey === 'leasingMonthlyInterestCost')?.value;
+  const creditInterestValue = payload?.find(({ dataKey }) => dataKey === 'creditMonthlyInterestCost')?.value;
 
   if (!active || typeof leasingValue !== 'number' || typeof creditValue !== 'number') {
     return null;
@@ -239,18 +311,28 @@ function CarFinancingTooltip({ active, label, metric, payload }: CarFinancingToo
 
   return (
     <div className={tooltipContentClasses('-translate-y-3 px-3 py-2')}>
-      <p className="font-bold text-slate-950">{formatTooltipYear(Number(label))}</p>
+      <p className="font-bold text-slate-950">{formatTooltipMonth(Number(label))}</p>
       <p className="mt-1 text-blue-700">Leasing: {currency(leasingValue)} CHF</p>
       <p className="text-emerald-700">Credit: {currency(creditValue)} CHF</p>
+      {metric === 'monthlyPayment' && typeof leasingInterestValue === 'number' && typeof creditInterestValue === 'number' && (
+        <>
+          <p className="mt-1 text-blue-400">Leasing interest: {currency(leasingInterestValue)} CHF</p>
+          <p className="text-emerald-400">Credit interest: {currency(creditInterestValue)} CHF</p>
+        </>
+      )}
     </div>
   );
 }
 
 function buildCarChartPoints({
   creditAnnualInterestRate,
+  creditAnnualTaxAdvantage,
+  creditExpectedResaleValue,
   creditSummary,
   horizonYears,
   leasingAnnualInterestRate,
+  leasingBuyoutOption,
+  leasingResidualValue,
   leasingSummary,
 }: CarFinancingChartsProps): CarChartPoint[] {
   const leasingPoints = buildCarFinancingProjection({
@@ -263,15 +345,29 @@ function buildCarChartPoints({
     horizonYears,
     summary: creditSummary,
   });
+  const netGainPoints = buildCarNetGainProjection({
+    creditAnnualTaxAdvantage,
+    creditExpectedResaleValue,
+    creditSummary,
+    horizonYears,
+    leasingBuyoutOption,
+    leasingResidualValue,
+    leasingSummary,
+  });
 
   return leasingPoints.map((leasingPoint, index) => {
     const creditPoint = creditPoints[index] ?? leasingPoint;
+    const netGainPoint = netGainPoints[index] ?? { creditNetGain: 0, leasingNetGain: 0 };
 
     return {
-      creditCumulativeInterestCost: Math.round(creditPoint.cumulativeInterestCost),
+      creditMonthlyInterestCost: Math.round(creditPoint.monthlyInterestCost),
       creditMonthlyPayment: Math.round(creditPoint.monthlyPayment),
+      creditNetGain: Math.round(netGainPoint.creditNetGain),
       leasingCumulativeInterestCost: Math.round(leasingPoint.cumulativeInterestCost),
+      leasingMonthlyInterestCost: Math.round(leasingPoint.monthlyInterestCost),
       leasingMonthlyPayment: Math.round(leasingPoint.monthlyPayment),
+      leasingNetGain: Math.round(netGainPoint.leasingNetGain),
+      month: Math.round(leasingPoint.year * 12),
       year: leasingPoint.year,
     };
   });
@@ -295,6 +391,20 @@ function buildYearTicks(maxYear: number) {
   return ticks.at(-1) === maxYear ? ticks : [...ticks, maxYear];
 }
 
+function buildSignedValueTicks(values: number[]) {
+  const minValue = Math.min(...values, 0);
+  const maxValue = Math.max(...values, 0);
+  const rawLimit = Math.max(Math.abs(minValue), Math.abs(maxValue), 1);
+  const roughStep = (rawLimit * 2) / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const normalized = roughStep / magnitude;
+  const niceNormalizedStep = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const step = niceNormalizedStep * magnitude;
+  const niceLimit = Math.max(step, Math.ceil(rawLimit / step) * step);
+
+  return [-niceLimit, -niceLimit / 2, 0, niceLimit / 2, niceLimit];
+}
+
 function formatAxisValue(value: number) {
   if (value === 0) {
     return '0';
@@ -311,14 +421,10 @@ function formatAxisValue(value: number) {
   return String(Math.round(value));
 }
 
-function formatTooltipYear(value: number) {
+function formatTooltipMonth(value: number) {
   if (!Number.isFinite(value)) {
-    return 'Year 0';
+    return 'Month 0';
   }
 
-  if (Number.isInteger(value)) {
-    return `Year ${value}`;
-  }
-
-  return `Year ${value.toFixed(1)}`;
+  return `Month ${Math.round(value * 12)}`;
 }

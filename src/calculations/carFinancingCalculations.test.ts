@@ -3,6 +3,7 @@ import {
   calculateCreditSummary,
   calculateLeasingSummary,
   buildCarFinancingProjection,
+  buildCarNetGainProjection,
   parseCarMoneyInput,
 } from './carFinancingCalculations';
 
@@ -73,12 +74,46 @@ describe('car financing calculations', () => {
     expect(points).toHaveLength(73);
     expect(points[0]).toEqual({
       cumulativeInterestCost: 0,
+      monthlyInterestCost: 0,
       monthlyPayment: summary.monthlyPayment,
       year: 0,
     });
     expect(points[60].monthlyPayment).toBeCloseTo(summary.monthlyPayment, 2);
+    expect(points[1].monthlyInterestCost).toBeCloseTo(216.17, 2);
+    expect(points[61].monthlyInterestCost).toBe(0);
     expect(points[60].cumulativeInterestCost).toBeCloseTo(summary.totalInterestCost, 2);
     expect(points[61].monthlyPayment).toBe(0);
     expect(points.at(-1)?.cumulativeInterestCost).toBeCloseTo(summary.totalInterestCost, 2);
+  });
+
+  it('builds cumulative net gain with credit resale, tax advantage, and lease buyout residual value', () => {
+    const leasingSummary = calculateLeasingSummary({
+      annualInterestRate: 5,
+      downPayment: 10000,
+      durationMonths: 12,
+      residualValue: 10000,
+      vehiclePrice: 50000,
+    });
+    const creditSummary = calculateCreditSummary({
+      annualInterestRate: 5,
+      downPayment: 10000,
+      durationMonths: 12,
+      vehiclePrice: 50000,
+    });
+    const points = buildCarNetGainProjection({
+      creditAnnualTaxAdvantage: 1200,
+      creditExpectedResaleValue: 24000,
+      creditSummary,
+      horizonYears: 2,
+      leasingBuyoutOption: true,
+      leasingResidualValue: 10000,
+      leasingSummary,
+    });
+
+    expect(points).toHaveLength(25);
+    expect(points[0]).toEqual({ creditNetGain: 0, leasingNetGain: 0, year: 0 });
+    expect(points[12].leasingNetGain).toBeCloseTo(10000 - leasingSummary.monthlyPayment * 12, 2);
+    expect(points[24].leasingNetGain).toBeCloseTo(10000 - leasingSummary.monthlyPayment * 12, 2);
+    expect(points[24].creditNetGain).toBeCloseTo(24000 - creditSummary.monthlyPayment * 12 + 2400, 2);
   });
 });

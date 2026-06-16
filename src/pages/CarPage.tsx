@@ -157,9 +157,13 @@ export function CarPage() {
       </div>
       <CarFinancingCharts
         creditAnnualInterestRate={creditInterestRate}
+        creditAnnualTaxAdvantage={parseCarMoneyInput(formValues.creditEstimatedTaxAdvantage)}
+        creditExpectedResaleValue={parseCarMoneyInput(formValues.creditExpectedResaleValue)}
         creditSummary={creditSummary}
         horizonYears={planningHorizon}
         leasingAnnualInterestRate={leasingRate}
+        leasingBuyoutOption={formValues.leasingBuyoutOption === true}
+        leasingResidualValue={parseCarMoneyInput(formValues.leasingResidualValue)}
         leasingSummary={leasingSummary}
       />
     </section>
