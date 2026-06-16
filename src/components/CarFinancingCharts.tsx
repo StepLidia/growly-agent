@@ -1,0 +1,324 @@
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import {
+  buildCarFinancingProjection,
+  type CarFinancingSummary,
+} from '../calculations/carFinancingCalculations';
+import { colorClasses } from '../constants/colors';
+import { tooltipContentClasses } from '../constants/tooltipStyles';
+import { currency } from '../finance';
+
+type CarFinancingChartsProps = {
+  creditAnnualInterestRate: number;
+  creditSummary: CarFinancingSummary;
+  horizonYears: number;
+  leasingAnnualInterestRate: number;
+  leasingSummary: CarFinancingSummary;
+};
+
+type CarChartMetric = 'monthlyPayment' | 'cumulativeInterestCost';
+
+type CarChartPoint = {
+  creditCumulativeInterestCost: number;
+  creditMonthlyPayment: number;
+  leasingCumulativeInterestCost: number;
+  leasingMonthlyPayment: number;
+  year: number;
+};
+
+const carBorrowedBadgeClasses = {
+  credit: 'border-emerald-300/50 bg-emerald-500/10 text-emerald-700',
+  leasing: 'border-blue-300/50 bg-blue-500/10 text-blue-700',
+};
+
+export function CarFinancingCharts({
+  creditAnnualInterestRate,
+  creditSummary,
+  horizonYears,
+  leasingAnnualInterestRate,
+  leasingSummary,
+}: CarFinancingChartsProps) {
+  const points = buildCarChartPoints({
+    creditAnnualInterestRate,
+    creditSummary,
+    horizonYears,
+    leasingAnnualInterestRate,
+    leasingSummary,
+  });
+
+  return (
+    <div className="grid min-w-0 gap-3 md:grid-cols-2">
+      <CarFinancingChartCard
+        creditSummary={creditSummary}
+        data={points}
+        horizonYears={horizonYears}
+        leasingSummary={leasingSummary}
+        metric="monthlyPayment"
+        subtitle="Monthly payment schedule over the selected horizon"
+        title="Payments per Month"
+      />
+      <CarFinancingChartCard
+        creditSummary={creditSummary}
+        data={points}
+        horizonYears={horizonYears}
+        leasingSummary={leasingSummary}
+        metric="cumulativeInterestCost"
+        subtitle="Interest paid over time until each financing term ends"
+        title="Cumulative Interest"
+      />
+    </div>
+  );
+}
+
+function CarFinancingChartCard({
+  creditSummary,
+  data,
+  horizonYears,
+  leasingSummary,
+  metric,
+  subtitle,
+  title,
+}: {
+  creditSummary: CarFinancingSummary;
+  data: CarChartPoint[];
+  horizonYears: number;
+  leasingSummary: CarFinancingSummary;
+  metric: CarChartMetric;
+  subtitle: string;
+  title: string;
+}) {
+  const leasingKey = metric === 'monthlyPayment' ? 'leasingMonthlyPayment' : 'leasingCumulativeInterestCost';
+  const creditKey = metric === 'monthlyPayment' ? 'creditMonthlyPayment' : 'creditCumulativeInterestCost';
+  const rawMaxValue = Math.max(...data.map((point) => Math.max(point[leasingKey], point[creditKey])), 1);
+  const ticks = buildValueTicks(rawMaxValue);
+  const maxValue = ticks.at(-1) ?? rawMaxValue;
+  const maxYear = Math.max(horizonYears, 1);
+  const gradientId = `car-${metric}-gradient`;
+
+  return (
+    <article className="glass-panel min-w-0 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-slate-950">{title}</h2>
+          <p className="mt-1 text-sm font-semibold text-slate-600">{subtitle}</p>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+          <BorrowedBadge label="Leasing" value={leasingSummary.financedAmount} variant="leasing" />
+          <BorrowedBadge label="Credit" value={creditSummary.financedAmount} variant="credit" />
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-bold text-slate-700">
+        <ChartLegendItem color={colorClasses.blue.stroke} label="Leasing" />
+        <ChartLegendItem color={colorClasses.emerald.stroke} label="Credit" />
+      </div>
+
+      <div className="mt-2 h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 14, right: 12, bottom: 6, left: -6 }}>
+            <defs>
+              <linearGradient id={`${gradientId}-leasing`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor={colorClasses.blue.stroke} stopOpacity={0.22} />
+                <stop offset="48%" stopColor={colorClasses.blue.stroke} stopOpacity={0.1} />
+                <stop offset="100%" stopColor={colorClasses.blue.stroke} stopOpacity={0.01} />
+              </linearGradient>
+              <linearGradient id={`${gradientId}-credit`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor={colorClasses.emerald.stroke} stopOpacity={0.2} />
+                <stop offset="48%" stopColor={colorClasses.emerald.stroke} stopOpacity={0.09} />
+                <stop offset="100%" stopColor={colorClasses.emerald.stroke} stopOpacity={0.01} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="rgba(100,116,139,.18)" strokeDasharray="0" vertical={false} />
+            <XAxis
+              axisLine={false}
+              dataKey="year"
+              domain={[0, maxYear]}
+              interval="preserveStartEnd"
+              tick={{ fill: '#475569', fontSize: 11, fontWeight: 500 }}
+              tickLine={false}
+              ticks={buildYearTicks(maxYear)}
+              type="number"
+            />
+            <YAxis
+              axisLine={false}
+              domain={[0, maxValue]}
+              tick={{ fill: '#475569', fontSize: 10, fontWeight: 500 }}
+              tickFormatter={formatAxisValue}
+              tickLine={false}
+              ticks={ticks}
+              width={48}
+            />
+            <Tooltip
+              content={<CarFinancingTooltip metric={metric} />}
+              cursor={{ stroke: colorClasses.blue.stroke, strokeDasharray: '3 5', strokeOpacity: 0.45, strokeWidth: 1.5 }}
+              isAnimationActive={false}
+              wrapperStyle={{ outline: 'none', pointerEvents: 'none' }}
+            />
+            <Area
+              activeDot={{ r: 5, fill: colorClasses.blue.stroke, stroke: 'white', strokeWidth: 2 }}
+              dataKey={leasingKey}
+              dot={false}
+              fill={`url(#${gradientId}-leasing)`}
+              isAnimationActive={false}
+              name="Leasing"
+              stroke={colorClasses.blue.stroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={3}
+              type={metric === 'monthlyPayment' ? 'stepAfter' : 'monotone'}
+            />
+            <Area
+              activeDot={{ r: 5, fill: colorClasses.emerald.stroke, stroke: 'white', strokeWidth: 2 }}
+              dataKey={creditKey}
+              dot={false}
+              fill={`url(#${gradientId}-credit)`}
+              isAnimationActive={false}
+              name="Credit"
+              stroke={colorClasses.emerald.stroke}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={3}
+              type={metric === 'monthlyPayment' ? 'stepAfter' : 'monotone'}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="mt-1 text-center text-sm font-semibold text-slate-600">Years</p>
+    </article>
+  );
+}
+
+function BorrowedBadge({
+  label,
+  value,
+  variant,
+}: {
+  label: string;
+  value: number;
+  variant: keyof typeof carBorrowedBadgeClasses;
+}) {
+  return (
+    <span className={`rounded-lg border px-2 py-1 text-sm font-semibold ${carBorrowedBadgeClasses[variant]}`}>
+      {label} borrowed {currency(value)} CHF
+    </span>
+  );
+}
+
+function ChartLegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="h-0.5 w-6" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  );
+}
+
+type CarFinancingTooltipProps = {
+  active?: boolean;
+  label?: number | string;
+  metric: CarChartMetric;
+  payload?: Array<{ dataKey?: string; value?: number }>;
+};
+
+function CarFinancingTooltip({ active, label, metric, payload }: CarFinancingTooltipProps) {
+  const leasingKey = metric === 'monthlyPayment' ? 'leasingMonthlyPayment' : 'leasingCumulativeInterestCost';
+  const creditKey = metric === 'monthlyPayment' ? 'creditMonthlyPayment' : 'creditCumulativeInterestCost';
+  const leasingValue = payload?.find(({ dataKey }) => dataKey === leasingKey)?.value;
+  const creditValue = payload?.find(({ dataKey }) => dataKey === creditKey)?.value;
+
+  if (!active || typeof leasingValue !== 'number' || typeof creditValue !== 'number') {
+    return null;
+  }
+
+  return (
+    <div className={tooltipContentClasses('-translate-y-3 px-3 py-2')}>
+      <p className="font-bold text-slate-950">{formatTooltipYear(Number(label))}</p>
+      <p className="mt-1 text-blue-700">Leasing: {currency(leasingValue)} CHF</p>
+      <p className="text-emerald-700">Credit: {currency(creditValue)} CHF</p>
+    </div>
+  );
+}
+
+function buildCarChartPoints({
+  creditAnnualInterestRate,
+  creditSummary,
+  horizonYears,
+  leasingAnnualInterestRate,
+  leasingSummary,
+}: CarFinancingChartsProps): CarChartPoint[] {
+  const leasingPoints = buildCarFinancingProjection({
+    annualInterestRate: leasingAnnualInterestRate,
+    horizonYears,
+    summary: leasingSummary,
+  });
+  const creditPoints = buildCarFinancingProjection({
+    annualInterestRate: creditAnnualInterestRate,
+    horizonYears,
+    summary: creditSummary,
+  });
+
+  return leasingPoints.map((leasingPoint, index) => {
+    const creditPoint = creditPoints[index] ?? leasingPoint;
+
+    return {
+      creditCumulativeInterestCost: Math.round(creditPoint.cumulativeInterestCost),
+      creditMonthlyPayment: Math.round(creditPoint.monthlyPayment),
+      leasingCumulativeInterestCost: Math.round(leasingPoint.cumulativeInterestCost),
+      leasingMonthlyPayment: Math.round(leasingPoint.monthlyPayment),
+      year: leasingPoint.year,
+    };
+  });
+}
+
+function buildValueTicks(maxValue: number) {
+  const roughStep = maxValue / 5;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const normalized = roughStep / magnitude;
+  const niceNormalizedStep = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const step = niceNormalizedStep * magnitude;
+  const niceMax = Math.max(step, Math.ceil(maxValue / step) * step);
+
+  return Array.from({ length: 6 }, (_, index) => (niceMax / 5) * index);
+}
+
+function buildYearTicks(maxYear: number) {
+  const step = Math.max(1, Math.ceil(maxYear / 6));
+  const ticks = Array.from({ length: Math.floor(maxYear / step) + 1 }, (_, index) => index * step);
+
+  return ticks.at(-1) === maxYear ? ticks : [...ticks, maxYear];
+}
+
+function formatAxisValue(value: number) {
+  if (value === 0) {
+    return '0';
+  }
+
+  if (value >= 1000000) {
+    return `${Number((value / 1000000).toFixed(value >= 10000000 ? 0 : 1))}M`;
+  }
+
+  if (value >= 1000) {
+    return `${Number((value / 1000).toFixed(value >= 100000 ? 0 : 1))}K`;
+  }
+
+  return String(Math.round(value));
+}
+
+function formatTooltipYear(value: number) {
+  if (!Number.isFinite(value)) {
+    return 'Year 0';
+  }
+
+  if (Number.isInteger(value)) {
+    return `Year ${value}`;
+  }
+
+  return `Year ${value.toFixed(1)}`;
+}

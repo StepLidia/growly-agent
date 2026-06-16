@@ -27,6 +27,7 @@ import {
   type CarFinancingSummary as CalculatedCarFinancingSummary,
 } from '../calculations/carFinancingCalculations';
 import { getPercent } from '../calculations/percent';
+import { CarFinancingCharts } from '../components/CarFinancingCharts';
 import { tooltipClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 
@@ -53,15 +54,17 @@ const initialCarFormValues: CarFormValues = {
 export function CarPage() {
   const [formValues, setFormValues] = useState<CarFormValues>(initialCarFormValues);
   const [planningHorizon, setPlanningHorizon] = useState(5);
+  const leasingRate = parseCarMoneyInput(formValues.leasingRate);
+  const creditInterestRate = parseCarMoneyInput(formValues.creditInterestRate);
   const leasingSummary = calculateLeasingSummary({
-    annualInterestRate: parseCarMoneyInput(formValues.leasingRate),
+    annualInterestRate: leasingRate,
     downPayment: parseCarMoneyInput(formValues.leasingDownPayment),
     durationMonths: parseCarMoneyInput(formValues.leasingDuration),
     residualValue: parseCarMoneyInput(formValues.leasingResidualValue),
     vehiclePrice: parseCarMoneyInput(formValues.leasingVehiclePrice),
   });
   const creditSummary = calculateCreditSummary({
-    annualInterestRate: parseCarMoneyInput(formValues.creditInterestRate),
+    annualInterestRate: creditInterestRate,
     downPayment: parseCarMoneyInput(formValues.creditDownPayment),
     durationMonths: parseCarMoneyInput(formValues.creditDuration),
     vehiclePrice: parseCarMoneyInput(formValues.creditVehiclePrice),
@@ -152,6 +155,13 @@ export function CarPage() {
           </CarFinancingCard>
         </div>
       </div>
+      <CarFinancingCharts
+        creditAnnualInterestRate={creditInterestRate}
+        creditSummary={creditSummary}
+        horizonYears={planningHorizon}
+        leasingAnnualInterestRate={leasingRate}
+        leasingSummary={leasingSummary}
+      />
     </section>
   );
 }
