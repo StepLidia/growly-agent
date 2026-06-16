@@ -18,6 +18,7 @@ export type CarFinancingProjectionPoint = {
   cumulativeInterestCost: number;
   monthlyInterestCost: number;
   monthlyPayment: number;
+  monthlyPrincipalRepayment: number;
   year: number;
 };
 
@@ -106,12 +107,14 @@ export function buildCarFinancingProjection({
 
   return Array.from({ length: horizonMonths + 1 }, (_, month) => {
     let monthlyInterestCost = 0;
+    let monthlyPrincipalRepayment = 0;
 
     if (month > 0 && month <= summary.durationMonths && balance > 0) {
       const interestCost = balance * monthlyRate;
       const principalPayment = Math.max(summary.monthlyPayment - interestCost, 0);
 
       monthlyInterestCost = interestCost;
+      monthlyPrincipalRepayment = principalPayment;
       cumulativeInterestCost += interestCost;
       balance = Math.max(balance - principalPayment, 0);
     }
@@ -120,6 +123,7 @@ export function buildCarFinancingProjection({
       cumulativeInterestCost,
       monthlyInterestCost,
       monthlyPayment: month <= summary.durationMonths ? summary.monthlyPayment : 0,
+      monthlyPrincipalRepayment,
       year: month / 12,
     };
   });

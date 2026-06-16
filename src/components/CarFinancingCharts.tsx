@@ -36,10 +36,12 @@ type CarChartMetric = 'monthlyPayment' | 'netGain';
 type CarChartPoint = {
   creditMonthlyInterestCost: number;
   creditMonthlyPayment: number;
+  creditMonthlyPrincipalRepayment: number;
   creditNetGain: number;
   leasingMonthlyInterestCost: number;
   leasingCumulativeInterestCost: number;
   leasingMonthlyPayment: number;
+  leasingMonthlyPrincipalRepayment: number;
   leasingNetGain: number;
   month: number;
   year: number;
@@ -141,7 +143,7 @@ function CarFinancingChartCard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-slate-950">{title}</h2>
-          <p className="mt-1 text-sm font-semibold text-slate-600">{subtitle}</p>
+          <p className="mt-1 text-xs font-medium text-slate-600">{subtitle}</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
           <BorrowedBadge label="Leasing" value={leasingSummary.financedAmount} variant="leasing" />
@@ -257,6 +259,22 @@ function CarFinancingChartCard({
                   strokeWidth={2}
                   type="monotone"
                 />
+                <Area
+                  dataKey="leasingMonthlyPrincipalRepayment"
+                  dot={false}
+                  fill="transparent"
+                  isAnimationActive={false}
+                  stroke="transparent"
+                  type="monotone"
+                />
+                <Area
+                  dataKey="creditMonthlyPrincipalRepayment"
+                  dot={false}
+                  fill="transparent"
+                  isAnimationActive={false}
+                  stroke="transparent"
+                  type="monotone"
+                />
               </>
             )}
             {metric === 'netGain' && (
@@ -312,6 +330,8 @@ function CarFinancingTooltip({ active, label, metric, payload }: CarFinancingToo
   const creditValue = payload?.find(({ dataKey }) => dataKey === creditKey)?.value;
   const leasingInterestValue = payload?.find(({ dataKey }) => dataKey === 'leasingMonthlyInterestCost')?.value;
   const creditInterestValue = payload?.find(({ dataKey }) => dataKey === 'creditMonthlyInterestCost')?.value;
+  const leasingPrincipalRepayment = payload?.find(({ dataKey }) => dataKey === 'leasingMonthlyPrincipalRepayment')?.value;
+  const creditPrincipalRepayment = payload?.find(({ dataKey }) => dataKey === 'creditMonthlyPrincipalRepayment')?.value;
 
   if (!active || typeof leasingValue !== 'number' || typeof creditValue !== 'number') {
     return null;
@@ -326,6 +346,12 @@ function CarFinancingTooltip({ active, label, metric, payload }: CarFinancingToo
         <>
           <p className="mt-1 text-rose-400">Leasing interest: {currency(leasingInterestValue)} CHF</p>
           <p className="text-red-600">Credit interest: {currency(creditInterestValue)} CHF</p>
+          {typeof leasingPrincipalRepayment === 'number' && typeof creditPrincipalRepayment === 'number' && (
+            <>
+              <p className="mt-1 text-slate-500">Leasing principal: {currency(leasingPrincipalRepayment)} CHF</p>
+              <p className="text-slate-700">Credit principal: {currency(creditPrincipalRepayment)} CHF</p>
+            </>
+          )}
         </>
       )}
     </div>
@@ -374,10 +400,12 @@ function buildCarChartPoints({
     return {
       creditMonthlyInterestCost: Math.round(creditPoint.monthlyInterestCost),
       creditMonthlyPayment: Math.round(creditPoint.monthlyPayment),
+      creditMonthlyPrincipalRepayment: Math.round(creditPoint.monthlyPrincipalRepayment),
       creditNetGain: Math.round(netGainPoint.creditNetGain),
       leasingCumulativeInterestCost: Math.round(leasingPoint.cumulativeInterestCost),
       leasingMonthlyInterestCost: Math.round(leasingPoint.monthlyInterestCost),
       leasingMonthlyPayment: Math.round(leasingPoint.monthlyPayment),
+      leasingMonthlyPrincipalRepayment: Math.round(leasingPoint.monthlyPrincipalRepayment),
       leasingNetGain: Math.round(netGainPoint.leasingNetGain),
       month: Math.round(leasingPoint.year * 12),
       year: leasingPoint.year,
@@ -422,15 +450,18 @@ function formatAxisValue(value: number) {
     return '0';
   }
 
-  if (value >= 1000000) {
-    return `${Number((value / 1000000).toFixed(value >= 10000000 ? 0 : 1))}M`;
+  const sign = value < 0 ? '-' : '';
+  const absoluteValue = Math.abs(value);
+
+  if (absoluteValue >= 1000000) {
+    return `${sign}${Number((absoluteValue / 1000000).toFixed(absoluteValue >= 10000000 ? 0 : 1))}M`;
   }
 
-  if (value >= 1000) {
-    return `${Number((value / 1000).toFixed(value >= 100000 ? 0 : 1))}K`;
+  if (absoluteValue >= 1000) {
+    return `${sign}${Number((absoluteValue / 1000).toFixed(absoluteValue >= 100000 ? 0 : 1))}K`;
   }
 
-  return String(Math.round(value));
+  return `${sign}${Math.round(absoluteValue)}`;
 }
 
 function formatTooltipMonth(value: number) {

@@ -76,10 +76,12 @@ describe('car financing calculations', () => {
       cumulativeInterestCost: 0,
       monthlyInterestCost: 0,
       monthlyPayment: summary.monthlyPayment,
+      monthlyPrincipalRepayment: 0,
       year: 0,
     });
     expect(points[60].monthlyPayment).toBeCloseTo(summary.monthlyPayment, 2);
     expect(points[1].monthlyInterestCost).toBeCloseTo(216.17, 2);
+    expect(points[1].monthlyPrincipalRepayment).toBeCloseTo(summary.monthlyPayment - points[1].monthlyInterestCost, 2);
     expect(points[61].monthlyInterestCost).toBe(0);
     expect(points[60].cumulativeInterestCost).toBeCloseTo(summary.totalInterestCost, 2);
     expect(points[61].monthlyPayment).toBe(0);
