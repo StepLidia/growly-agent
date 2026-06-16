@@ -28,7 +28,9 @@ type CarFinancingChartsProps = {
   leasingAnnualInterestRate: number;
   leasingBuyoutOption: boolean;
   leasingDownPayment: number;
+  leasingExpectedResaleValue: number;
   leasingResidualValue: number;
+  leasingVehiclePrice: number;
   leasingSummary: CarFinancingSummary;
 };
 
@@ -66,7 +68,9 @@ export function CarFinancingCharts({
   leasingAnnualInterestRate,
   leasingBuyoutOption,
   leasingDownPayment,
+  leasingExpectedResaleValue,
   leasingResidualValue,
+  leasingVehiclePrice,
   leasingSummary,
 }: CarFinancingChartsProps) {
   const points = buildCarChartPoints({
@@ -80,7 +84,9 @@ export function CarFinancingCharts({
     leasingAnnualInterestRate,
     leasingBuyoutOption,
     leasingDownPayment,
+    leasingExpectedResaleValue,
     leasingResidualValue,
+    leasingVehiclePrice,
     leasingSummary,
   });
 
@@ -336,6 +342,11 @@ function CarFinancingChartCard({
           </span>
         </div>
       )}
+      {metric === 'netGain' && (
+        <div className="mt-3 rounded-lg border border-slate-200/50 bg-slate-200/35 px-3 py-3 text-sm font-bold text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
+          Car value deprecates linearly from initial price towards resale value
+        </div>
+      )}
     </article>
   );
 }
@@ -460,7 +471,10 @@ function buildCarChartPoints({
   horizonYears,
   leasingAnnualInterestRate,
   leasingBuyoutOption,
+  leasingDownPayment,
+  leasingExpectedResaleValue,
   leasingResidualValue,
+  leasingVehiclePrice,
   leasingSummary,
 }: CarFinancingChartsProps): CarChartPoint[] {
   const leasingPoints = buildCarFinancingProjection({
@@ -481,7 +495,10 @@ function buildCarChartPoints({
     creditSummary,
     horizonYears,
     leasingBuyoutOption,
+    leasingDownPayment,
+    leasingExpectedResaleValue,
     leasingResidualValue,
+    leasingVehiclePrice,
     leasingSummary,
   });
 

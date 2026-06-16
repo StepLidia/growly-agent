@@ -88,7 +88,7 @@ describe('car financing calculations', () => {
     expect(points.at(-1)?.cumulativeInterestCost).toBeCloseTo(summary.totalInterestCost, 2);
   });
 
-  it('builds cumulative net gain with credit resale, tax advantage, and lease buyout residual value', () => {
+  it('builds cumulative net gain with credit depreciation and lease buyout depreciation', () => {
     const leasingSummary = calculateLeasingSummary({
       annualInterestRate: 5,
       downPayment: 10000,
@@ -110,14 +110,17 @@ describe('car financing calculations', () => {
       creditSummary,
       horizonYears: 2,
       leasingBuyoutOption: true,
+      leasingDownPayment: 10000,
+      leasingExpectedResaleValue: 24000,
       leasingResidualValue: 10000,
+      leasingVehiclePrice: 50000,
       leasingSummary,
     });
 
     expect(points).toHaveLength(25);
-    expect(points[0]).toEqual({ creditNetGain: 40000, leasingNetGain: 0, year: 0 });
-    expect(points[12].leasingNetGain).toBeCloseTo(10000 - leasingSummary.monthlyPayment * 12, 2);
-    expect(points[24].leasingNetGain).toBeCloseTo(10000 - leasingSummary.monthlyPayment * 12, 2);
+    expect(points[0]).toEqual({ creditNetGain: 40000, leasingNetGain: -10000, year: 0 });
+    expect(points[12].leasingNetGain).toBeCloseTo(37000 - 10000 - 10000 - leasingSummary.monthlyPayment * 12, 2);
+    expect(points[24].leasingNetGain).toBeCloseTo(24000 - 10000 - 10000 - leasingSummary.monthlyPayment * 12, 2);
     expect(points[12].creditNetGain).toBeCloseTo(37000 - 10000 - creditSummary.monthlyPayment * 12 + 1200, 2);
     expect(points[24].creditNetGain).toBeCloseTo(24000 - 10000 - creditSummary.monthlyPayment * 12 + 2400, 2);
   });

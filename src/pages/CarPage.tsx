@@ -43,6 +43,7 @@ const initialCarFormValues: CarFormValues = {
   leasingResidualValue: '26,250',
   leasingAnnualMileage: '12,000',
   leasingBuyoutOption: true,
+  leasingExpectedResaleValue: '26,250',
   creditVehiclePrice: '52,500',
   creditDownPayment: '5,250',
   creditInterestRate: '5.49',
@@ -120,6 +121,22 @@ export function CarPage() {
               value={formValues.leasingBuyoutOption === true}
               onChange={updateField}
             />
+            {formValues.leasingBuyoutOption === true && (
+              <CarTextField
+                id="leasingExpectedResaleValue"
+                label={(
+                  <>
+                    Est. resale value after{' '}
+                    <span className="font-bold text-slate-950">
+                      {planningHorizon} {planningHorizon === 1 ? 'year' : 'years'}
+                    </span>
+                  </>
+                )}
+                suffix="CHF"
+                value={formValues.leasingExpectedResaleValue}
+                onChange={updateField}
+              />
+            )}
           </CarFinancingCard>
           <CarFinancingCard
             icon={Banknote}
@@ -166,7 +183,9 @@ export function CarPage() {
         leasingAnnualInterestRate={leasingRate}
         leasingBuyoutOption={formValues.leasingBuyoutOption === true}
         leasingDownPayment={parseCarMoneyInput(formValues.leasingDownPayment)}
+        leasingExpectedResaleValue={parseCarMoneyInput(formValues.leasingExpectedResaleValue)}
         leasingResidualValue={parseCarMoneyInput(formValues.leasingResidualValue)}
+        leasingVehiclePrice={parseCarMoneyInput(formValues.leasingVehiclePrice)}
         leasingSummary={leasingSummary}
       />
     </section>

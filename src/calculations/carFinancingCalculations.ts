@@ -137,7 +137,10 @@ export function buildCarNetGainProjection({
   creditSummary,
   horizonYears,
   leasingBuyoutOption,
+  leasingDownPayment,
+  leasingExpectedResaleValue,
   leasingResidualValue,
+  leasingVehiclePrice,
   leasingSummary,
 }: {
   creditAnnualTaxAdvantage: number;
@@ -147,7 +150,10 @@ export function buildCarNetGainProjection({
   creditSummary: CarFinancingSummary;
   horizonYears: number;
   leasingBuyoutOption: boolean;
+  leasingDownPayment: number;
+  leasingExpectedResaleValue: number;
   leasingResidualValue: number;
+  leasingVehiclePrice: number;
   leasingSummary: CarFinancingSummary;
 }): CarNetGainProjectionPoint[] {
   const horizonMonths = normalizeDuration(horizonYears * 12);
@@ -155,7 +161,10 @@ export function buildCarNetGainProjection({
   const safeCreditDownPayment = normalizeMoney(creditDownPayment);
   const safeCreditVehiclePrice = normalizeMoney(creditVehiclePrice);
   const safeCreditTaxAdvantagePerMonth = normalizeMoney(creditAnnualTaxAdvantage) / 12;
+  const safeLeasingDownPayment = normalizeMoney(leasingDownPayment);
+  const safeLeasingResaleValue = normalizeMoney(leasingExpectedResaleValue);
   const safeLeasingResidualValue = normalizeMoney(leasingResidualValue);
+  const safeLeasingVehiclePrice = normalizeMoney(leasingVehiclePrice);
 
   return Array.from({ length: horizonMonths + 1 }, (_, month) => {
     const creditPaidMonths = Math.min(month, creditSummary.durationMonths);
@@ -167,7 +176,12 @@ export function buildCarNetGainProjection({
       startValue: safeCreditVehiclePrice,
     });
     const leasingBuyoutEquity = leasingBuyoutOption && month >= leasingSummary.durationMonths
-      ? safeLeasingResidualValue
+      ? calculateLinearValue({
+        endValue: safeLeasingResaleValue,
+        horizonMonths,
+        month,
+        startValue: safeLeasingVehiclePrice,
+      }) - safeLeasingResidualValue
       : 0;
 
     return {
@@ -177,7 +191,8 @@ export function buildCarNetGainProjection({
         - creditSummary.monthlyPayment * creditPaidMonths
         + safeCreditTaxAdvantagePerMonth * month,
       leasingNetGain:
-        leasingBuyoutEquity
+        -safeLeasingDownPayment
+        + leasingBuyoutEquity
         - leasingSummary.monthlyPayment * leasingPaidMonths,
       year: month / 12,
     };
