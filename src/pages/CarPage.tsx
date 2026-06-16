@@ -32,8 +32,14 @@ import { tooltipClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 
 const CAR_MODEL_PATH = '/models/McLaren.optimized.glb';
+const CAR_INPUTS_STORAGE_KEY = 'growly-car-inputs-v1';
 
 type CarFormValues = Record<string, string | boolean>;
+
+type SavedCarInputs = {
+  formValues?: Partial<CarFormValues>;
+  planningHorizon?: number;
+};
 
 const initialCarFormValues: CarFormValues = {
   leasingVehiclePrice: '52,500',
@@ -53,8 +59,9 @@ const initialCarFormValues: CarFormValues = {
 };
 
 export function CarPage() {
-  const [formValues, setFormValues] = useState<CarFormValues>(initialCarFormValues);
-  const [planningHorizon, setPlanningHorizon] = useState(5);
+  const savedCarInputs = useRef(readSavedCarInputs()).current;
+  const [formValues, setFormValues] = useState<CarFormValues>(() => mergeSavedCarFormValues(savedCarInputs.formValues));
+  const [planningHorizon, setPlanningHorizon] = useState(() => getSavedCarPlanningHorizon(savedCarInputs.planningHorizon));
   const leasingRate = parseCarMoneyInput(formValues.leasingRate);
   const creditInterestRate = parseCarMoneyInput(formValues.creditInterestRate);
   const leasingSummary = calculateLeasingSummary({
@@ -77,6 +84,10 @@ export function CarPage() {
       [id]: value,
     }));
   }
+
+  useEffect(() => {
+    saveCarInputs({ formValues, planningHorizon });
+  }, [formValues, planningHorizon]);
 
   return (
     <section className="space-y-5">
@@ -189,6 +200,53 @@ export function CarPage() {
         leasingSummary={leasingSummary}
       />
     </section>
+  );
+}
+
+function readSavedCarInputs(): SavedCarInputs {
+  try {
+    const savedValue = window.localStorage.getItem(CAR_INPUTS_STORAGE_KEY);
+    const parsedValue: unknown = savedValue ? JSON.parse(savedValue) : {};
+
+    return isSavedCarInputs(parsedValue) ? parsedValue : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCarInputs(inputs: Required<SavedCarInputs>) {
+  try {
+    window.localStorage.setItem(CAR_INPUTS_STORAGE_KEY, JSON.stringify(inputs));
+  } catch {
+    // Ignore storage failures so the calculator remains usable in private or restricted browser modes.
+  }
+}
+
+function mergeSavedCarFormValues(savedFormValues: SavedCarInputs['formValues']) {
+  return Object.fromEntries(
+    Object.entries(initialCarFormValues).map(([key, fallback]) => {
+      const savedValue = savedFormValues?.[key];
+      const isMatchingType = typeof savedValue === typeof fallback;
+
+      return [key, isMatchingType ? savedValue : fallback];
+    }),
+  ) as CarFormValues;
+}
+
+function getSavedCarPlanningHorizon(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.min(Math.max(Math.round(value), 0), 20) : 5;
+}
+
+function isSavedCarInputs(value: unknown): value is SavedCarInputs {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const inputs = value as SavedCarInputs;
+
+  return (
+    (inputs.planningHorizon === undefined || typeof inputs.planningHorizon === 'number') &&
+    (inputs.formValues === undefined || (typeof inputs.formValues === 'object' && inputs.formValues !== null))
   );
 }
 
