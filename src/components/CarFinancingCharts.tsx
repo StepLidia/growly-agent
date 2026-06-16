@@ -14,7 +14,7 @@ import {
   type CarFinancingSummary,
 } from '../calculations/carFinancingCalculations';
 import { colorClasses } from '../constants/colors';
-import { tooltipContentClasses } from '../constants/tooltipStyles';
+import { tooltipClasses, tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 
 type CarFinancingChartsProps = {
@@ -85,8 +85,11 @@ export function CarFinancingCharts({
     <div className="grid min-w-0 gap-3 md:grid-cols-2">
       <CarFinancingChartCard
         creditSummary={creditSummary}
+        creditAnnualTaxAdvantage={creditAnnualTaxAdvantage}
         data={points}
         horizonYears={horizonYears}
+        leasingBuyoutOption={leasingBuyoutOption}
+        leasingResidualValue={leasingResidualValue}
         leasingSummary={leasingSummary}
         metric="monthlyPayment"
         subtitle="Monthly payment schedule over the selected horizon"
@@ -94,8 +97,11 @@ export function CarFinancingCharts({
       />
       <CarFinancingChartCard
         creditSummary={creditSummary}
+        creditAnnualTaxAdvantage={creditAnnualTaxAdvantage}
         data={points}
         horizonYears={horizonYears}
+        leasingBuyoutOption={leasingBuyoutOption}
+        leasingResidualValue={leasingResidualValue}
         leasingSummary={leasingSummary}
         metric="netGain"
         subtitle="Net value over the selected horizon"
@@ -107,16 +113,22 @@ export function CarFinancingCharts({
 
 function CarFinancingChartCard({
   creditSummary,
+  creditAnnualTaxAdvantage,
   data,
   horizonYears,
+  leasingBuyoutOption,
+  leasingResidualValue,
   leasingSummary,
   metric,
   subtitle,
   title,
 }: {
   creditSummary: CarFinancingSummary;
+  creditAnnualTaxAdvantage: number;
   data: CarChartPoint[];
   horizonYears: number;
+  leasingBuyoutOption: boolean;
+  leasingResidualValue: number;
   leasingSummary: CarFinancingSummary;
   metric: CarChartMetric;
   subtitle: string;
@@ -284,8 +296,73 @@ function CarFinancingChartCard({
         </ResponsiveContainer>
       </div>
       <p className="mt-1 text-center text-sm font-semibold text-slate-600">Years</p>
+      {metric === 'monthlyPayment' && (
+        <div className="mt-3 rounded-lg border border-slate-200/50 bg-slate-200/35 px-3 py-3 text-sm font-bold text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
+          Total money paid at the end:{' '}
+          <span className="text-blue-700">
+            Leasing {currency(calculateLeasingTotalMoneyPaid({ buyoutOption: leasingBuyoutOption, residualValue: leasingResidualValue, summary: leasingSummary }))} CHF
+          </span>
+          <span className="text-slate-500">, </span>
+          <span className="text-emerald-700">
+            Credit {currency(calculateCreditTotalMoneyPaid({ annualTaxAdvantage: creditAnnualTaxAdvantage, summary: creditSummary }))} CHF
+          </span>
+          <span className="group relative ml-1 inline-flex align-super">
+            <button
+              aria-describedby="credit-total-tax-savings-tooltip"
+              aria-label="Credit total includes tax savings"
+              className="text-pink-400 transition hover:text-pink-500 focus:outline-none"
+              type="button"
+            >
+              *
+            </button>
+            <span
+              id="credit-total-tax-savings-tooltip"
+              role="tooltip"
+              className={tooltipClasses('bottom-5 left-1/2 w-max -translate-x-1/2 whitespace-nowrap px-3 py-2')}
+            >
+              Including tax savings
+            </span>
+          </span>
+        </div>
+      )}
     </article>
   );
+}
+
+function calculateTotalMoneyPaid(summary: CarFinancingSummary) {
+  return summary.monthlyPayment * summary.durationMonths;
+}
+
+function calculateLeasingTotalMoneyPaid({
+  buyoutOption,
+  residualValue,
+  summary,
+}: {
+  buyoutOption: boolean;
+  residualValue: number;
+  summary: CarFinancingSummary;
+}) {
+  return calculateTotalMoneyPaid(summary) + (buyoutOption ? Math.max(residualValue, 0) : 0);
+}
+
+function calculateCreditTaxSavings({
+  annualTaxAdvantage,
+  summary,
+}: {
+  annualTaxAdvantage: number;
+  summary: CarFinancingSummary;
+}) {
+  return Math.max(annualTaxAdvantage, 0) * (summary.durationMonths / 12);
+}
+
+function calculateCreditTotalMoneyPaid({
+  annualTaxAdvantage,
+  summary,
+}: {
+  annualTaxAdvantage: number;
+  summary: CarFinancingSummary;
+}) {
+  return calculateTotalMoneyPaid(summary) - calculateCreditTaxSavings({ annualTaxAdvantage, summary });
 }
 
 function BorrowedBadge({
