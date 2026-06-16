@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Banknote, Car, Info, type LucideIcon } from 'lucide-react';
 import {
   ACESFilmicToneMapping,
@@ -26,6 +26,7 @@ import {
   parseCarMoneyInput,
   type CarFinancingSummary as CalculatedCarFinancingSummary,
 } from '../calculations/carFinancingCalculations';
+import { getPercent } from '../calculations/percent';
 import { tooltipClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 
@@ -51,6 +52,7 @@ const initialCarFormValues: CarFormValues = {
 
 export function CarPage() {
   const [formValues, setFormValues] = useState<CarFormValues>(initialCarFormValues);
+  const [planningHorizon, setPlanningHorizon] = useState(5);
   const leasingSummary = calculateLeasingSummary({
     annualInterestRate: parseCarMoneyInput(formValues.leasingRate),
     downPayment: parseCarMoneyInput(formValues.leasingDownPayment),
@@ -84,12 +86,18 @@ export function CarPage() {
       </header>
 
       <div className="grid gap-5 xl:grid-cols-5">
-        <article className="rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 p-px shadow-2xl shadow-slate-400/85 xl:col-span-2">
-          <div className="relative overflow-hidden rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 backdrop-blur-2xl">
-            <CarModelViewer />
-            <CarModelCredit />
-          </div>
-        </article>
+        <div className="space-y-3 xl:col-span-2">
+          <article className="rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 p-px shadow-2xl shadow-slate-400/85">
+            <div className="relative overflow-hidden rounded-2xl bg-linear-to-b from-slate-100/70 via-slate-300/50 to-slate-400/70 backdrop-blur-2xl">
+              <CarModelViewer />
+              <CarModelCredit />
+            </div>
+          </article>
+          <CarPlanningHorizonSlider
+            value={planningHorizon}
+            onChange={setPlanningHorizon}
+          />
+        </div>
         <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:col-span-3">
           <CarFinancingCard
             icon={Car}
@@ -129,12 +137,57 @@ export function CarPage() {
             />
             <CarTextField
               id="creditExpectedResaleValue"
-              label="Est. resale value"
+              label={(
+                <>
+                  Est. resale value after{' '}
+                  <span className="font-bold text-slate-950">
+                    {planningHorizon} {planningHorizon === 1 ? 'year' : 'years'}
+                  </span>
+                </>
+              )}
               suffix="CHF"
               value={formValues.creditExpectedResaleValue}
               onChange={updateField}
             />
           </CarFinancingCard>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CarPlanningHorizonSlider({
+  onChange,
+  value,
+}: {
+  onChange: (value: number) => void;
+  value: number;
+}) {
+  const percent = getPercent(value, 20);
+
+  return (
+    <section className="glass-panel px-5 py-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-32 items-baseline justify-between gap-3 sm:block">
+          <p className="text-sm font-bold text-slate-900">Horizon</p>
+          <p className="mt-1 text-sm text-slate-600">
+            <span className="font-extrabold text-slate-950">{value}</span> years
+          </p>
+        </div>
+        <div className="flex flex-1 items-center gap-4">
+          <span className="text-sm font-bold text-slate-500">0</span>
+          <input
+            aria-label="Planning horizon"
+            className="years-slider"
+            max={20}
+            min={0}
+            step={1}
+            style={{ '--slider-progress': `${percent}%` } as CSSProperties}
+            type="range"
+            value={value}
+            onChange={(event) => onChange(Number(event.currentTarget.value))}
+          />
+          <span className="text-sm font-bold text-slate-500">20</span>
         </div>
       </div>
     </section>
@@ -180,7 +233,7 @@ function CarSummaryBadge({
   const toneClasses = tone === 'blue'
     ? {
       border: 'border-blue-300/50',
-      bg: 'bg-blue-50',
+      bg: 'bg-blue-500/10',
       label: 'text-blue-700',
       value: 'text-blue-700',
     }
@@ -230,7 +283,7 @@ function CarTextField({
   value,
 }: {
   id: string;
-  label: string;
+  label: ReactNode;
   onChange: (id: string, value: string) => void;
   suffix?: string;
   value: string | boolean;
@@ -240,7 +293,7 @@ function CarTextField({
       <span className="truncate text-sm font-medium text-slate-800">{label}</span>
       <span className="glass-input grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2 text-sm">
         <input
-          aria-label={label}
+          aria-label={getCarFieldAriaLabel(label)}
           className="w-full min-w-0 bg-transparent text-right font-black text-slate-950 outline-none"
           inputMode="decimal"
           type="text"
@@ -251,6 +304,10 @@ function CarTextField({
       </span>
     </label>
   );
+}
+
+function getCarFieldAriaLabel(label: ReactNode) {
+  return typeof label === 'string' ? label : 'Estimated resale value';
 }
 
 function CarToggleField({
