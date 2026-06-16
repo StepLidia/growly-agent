@@ -320,6 +320,10 @@ input[type="number"]::-webkit-inner-spin-button {
   opacity: 1;
 }
 
+.glass-panel[data-tooltip-panel-open="true"] {
+  z-index: 80;
+}
+
 .overview-current-card {
   border-color: rgba(183, 198, 161, 0.78);
   background-color: rgba(242, 246, 234, 0.82);

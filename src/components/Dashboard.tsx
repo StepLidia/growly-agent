@@ -51,6 +51,7 @@ export function Dashboard() {
 
   useEffect(() => {
     function closeTooltip(host: HTMLElement) {
+      host.closest<HTMLElement>('.glass-panel')?.removeAttribute('data-tooltip-panel-open');
       host.removeAttribute('data-tooltip-open');
     }
 
@@ -81,6 +82,7 @@ export function Dashboard() {
           closeTooltip(host);
         } else {
           host.setAttribute('data-tooltip-open', 'true');
+          host.closest<HTMLElement>('.glass-panel')?.setAttribute('data-tooltip-panel-open', 'true');
         }
 
         return;

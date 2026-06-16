@@ -161,7 +161,18 @@ export function CarPage() {
             <CarTextField id="creditInterestRate" label="Interest rate" suffix="%" value={formValues.creditInterestRate} onChange={updateField} />
             <CarTextField
               id="creditEstimatedTaxAdvantage"
-              label="Est. tax advantage per year"
+              label={(
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <span className="truncate">Est. tax advantage per year</span>
+                  <CarInfoTooltip
+                    className="bottom-6 left-1/2 top-auto -translate-x-1/2"
+                    id="credit-tax-advantage-tooltip"
+                    label="Show tax advantage hint"
+                  >
+                    Interest cost is deductible from net income
+                  </CarInfoTooltip>
+                </span>
+              )}
               suffix="CHF"
               value={formValues.creditEstimatedTaxAdvantage}
               onChange={updateField}
@@ -247,6 +258,38 @@ function isSavedCarInputs(value: unknown): value is SavedCarInputs {
   return (
     (inputs.planningHorizon === undefined || typeof inputs.planningHorizon === 'number') &&
     (inputs.formValues === undefined || (typeof inputs.formValues === 'object' && inputs.formValues !== null))
+  );
+}
+
+function CarInfoTooltip({
+  children,
+  className = 'left-0 top-6',
+  id,
+  label,
+}: {
+  children: ReactNode;
+  className?: string;
+  id: string;
+  label: string;
+}) {
+  return (
+    <span className="group relative inline-flex shrink-0">
+      <button
+        aria-describedby={id}
+        aria-label={label}
+        className="grid h-5 w-5 place-items-center rounded-full text-slate-500 transition hover:bg-white/50 hover:text-blue-700 focus:outline-none"
+        type="button"
+      >
+        <Info className="h-4 w-4" />
+      </button>
+      <span
+        id={id}
+        role="tooltip"
+        className={tooltipClasses(`${className} w-60 p-3 leading-5`)}
+      >
+        {children}
+      </span>
+    </span>
   );
 }
 
@@ -384,7 +427,9 @@ function CarTextField({
 }) {
   return (
     <label className="grid min-w-0 grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_9rem] sm:gap-3">
-      <span className="truncate text-sm font-medium text-slate-800">{label}</span>
+      <span className={`${typeof label === 'string' ? 'truncate' : 'min-w-0'} text-sm font-medium text-slate-800`}>
+        {label}
+      </span>
       <span className="glass-input grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2 text-sm">
         <input
           aria-label={getCarFieldAriaLabel(label)}
