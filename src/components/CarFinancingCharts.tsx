@@ -543,8 +543,12 @@ function formatAxisValue(value: number) {
 
 function formatTooltipMonth(value: number) {
   if (!Number.isFinite(value)) {
-    return 'Month 0';
+    return 'Year 0, Month 0';
   }
 
-  return `Month ${Math.round(value * 12)}`;
+  const totalMonths = Math.max(Math.round(value * 12), 0);
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  return `Year ${years}, Month ${months}`;
 }
