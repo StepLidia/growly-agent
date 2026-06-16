@@ -20,7 +20,14 @@ import {
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import {
+  calculateCreditSummary,
+  calculateLeasingSummary,
+  parseCarMoneyInput,
+  type CarFinancingSummary as CalculatedCarFinancingSummary,
+} from '../calculations/carFinancingCalculations';
 import { tooltipClasses } from '../constants/tooltipStyles';
+import { currency } from '../finance';
 
 const CAR_MODEL_PATH = '/models/McLaren.optimized.glb';
 
@@ -44,6 +51,19 @@ const initialCarFormValues: CarFormValues = {
 
 export function CarPage() {
   const [formValues, setFormValues] = useState<CarFormValues>(initialCarFormValues);
+  const leasingSummary = calculateLeasingSummary({
+    annualInterestRate: parseCarMoneyInput(formValues.leasingRate),
+    downPayment: parseCarMoneyInput(formValues.leasingDownPayment),
+    durationMonths: parseCarMoneyInput(formValues.leasingDuration),
+    residualValue: parseCarMoneyInput(formValues.leasingResidualValue),
+    vehiclePrice: parseCarMoneyInput(formValues.leasingVehiclePrice),
+  });
+  const creditSummary = calculateCreditSummary({
+    annualInterestRate: parseCarMoneyInput(formValues.creditInterestRate),
+    downPayment: parseCarMoneyInput(formValues.creditDownPayment),
+    durationMonths: parseCarMoneyInput(formValues.creditDuration),
+    vehiclePrice: parseCarMoneyInput(formValues.creditVehiclePrice),
+  });
 
   function updateField(id: string, value: string | boolean) {
     setFormValues((currentValues) => ({
@@ -74,6 +94,7 @@ export function CarPage() {
           <CarFinancingCard
             icon={Car}
             iconClassName="bg-blue-500/10 text-blue-600"
+            summary={<CarSummaryBadge summary={leasingSummary} tone="blue" />}
             title="Leasing"
           >
             <CarTextField id="leasingVehiclePrice" label="Vehicle price" suffix="CHF" value={formValues.leasingVehiclePrice} onChange={updateField} />
@@ -92,6 +113,7 @@ export function CarPage() {
           <CarFinancingCard
             icon={Banknote}
             iconClassName="bg-emerald-500/10 text-emerald-600"
+            summary={<CarSummaryBadge summary={creditSummary} tone="emerald" />}
             title="Credit"
           >
             <CarTextField id="creditVehiclePrice" label="Vehicle price" suffix="CHF" value={formValues.creditVehiclePrice} onChange={updateField} />
@@ -123,15 +145,17 @@ function CarFinancingCard({
   children,
   icon: Icon,
   iconClassName,
+  summary,
   title,
 }: {
   children: ReactNode;
   icon: LucideIcon;
   iconClassName: string;
+  summary?: ReactNode;
   title: string;
 }) {
   return (
-    <section className="glass-panel min-w-0 p-4">
+    <section className="glass-panel flex min-w-0 flex-col p-4">
       <div className="flex min-w-0 items-center gap-3">
         <div className={`grid h-10 w-10 place-items-center rounded-2xl ${iconClassName}`}>
           <Icon className="h-5 w-5" />
@@ -141,8 +165,61 @@ function CarFinancingCard({
       <div className="mt-4 space-y-2.5 text-sm">
         {children}
       </div>
+      {summary && <div className="mt-auto pt-4">{summary}</div>}
     </section>
   );
+}
+
+function CarSummaryBadge({
+  summary,
+  tone,
+}: {
+  summary: CalculatedCarFinancingSummary;
+  tone: 'blue' | 'emerald';
+}) {
+  const toneClasses = tone === 'blue'
+    ? {
+      border: 'border-blue-300/50',
+      bg: 'bg-blue-50',
+      label: 'text-blue-700',
+      value: 'text-blue-700',
+    }
+    : {
+      border: 'border-emerald-300/50',
+      bg: 'bg-emerald-500/10',
+      label: 'text-emerald-700',
+      value: 'text-emerald-700',
+    };
+
+  return (
+    <div className={`grid gap-3 rounded-lg border px-3 py-3 sm:grid-cols-2 ${toneClasses.bg} ${toneClasses.border}`}>
+      <div className="min-w-0">
+        <p className={`text-sm font-semibold ${toneClasses.label}`}>Est. Monthly Payment</p>
+        <p className={`mt-1 text-2xl font-bold leading-none ${toneClasses.value}`}>
+          {currency(summary.monthlyPayment)}
+          <span className="ml-1 text-sm font-medium text-slate-700">CHF/mo</span>
+        </p>
+      </div>
+      <div className="min-w-0 sm:text-right">
+        <p className="text-sm font-semibold text-slate-600">
+          Total Interest ({formatCarDuration(summary.durationYears)})
+        </p>
+        <p className="mt-2 text-lg font-bold leading-none text-slate-950">
+          {currency(summary.totalInterestCost)} CHF
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function formatCarDuration(durationYears: number) {
+  if (!Number.isFinite(durationYears) || durationYears <= 0) {
+    return '0 years';
+  }
+
+  const roundedYears = Math.round(durationYears * 10) / 10;
+
+  return `${roundedYears} ${roundedYears === 1 ? 'year' : 'years'}`;
 }
 
 function CarTextField({
