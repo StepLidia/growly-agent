@@ -27,6 +27,7 @@ type CarFinancingChartsProps = {
   horizonYears: number;
   leasingAnnualInterestRate: number;
   leasingBuyoutOption: boolean;
+  leasingDownPayment: number;
   leasingResidualValue: number;
   leasingSummary: CarFinancingSummary;
 };
@@ -64,6 +65,7 @@ export function CarFinancingCharts({
   horizonYears,
   leasingAnnualInterestRate,
   leasingBuyoutOption,
+  leasingDownPayment,
   leasingResidualValue,
   leasingSummary,
 }: CarFinancingChartsProps) {
@@ -77,6 +79,7 @@ export function CarFinancingCharts({
     horizonYears,
     leasingAnnualInterestRate,
     leasingBuyoutOption,
+    leasingDownPayment,
     leasingResidualValue,
     leasingSummary,
   });
@@ -86,9 +89,11 @@ export function CarFinancingCharts({
       <CarFinancingChartCard
         creditSummary={creditSummary}
         creditAnnualTaxAdvantage={creditAnnualTaxAdvantage}
+        creditDownPayment={creditDownPayment}
         data={points}
         horizonYears={horizonYears}
         leasingBuyoutOption={leasingBuyoutOption}
+        leasingDownPayment={leasingDownPayment}
         leasingResidualValue={leasingResidualValue}
         leasingSummary={leasingSummary}
         metric="monthlyPayment"
@@ -98,9 +103,11 @@ export function CarFinancingCharts({
       <CarFinancingChartCard
         creditSummary={creditSummary}
         creditAnnualTaxAdvantage={creditAnnualTaxAdvantage}
+        creditDownPayment={creditDownPayment}
         data={points}
         horizonYears={horizonYears}
         leasingBuyoutOption={leasingBuyoutOption}
+        leasingDownPayment={leasingDownPayment}
         leasingResidualValue={leasingResidualValue}
         leasingSummary={leasingSummary}
         metric="netGain"
@@ -114,9 +121,11 @@ export function CarFinancingCharts({
 function CarFinancingChartCard({
   creditSummary,
   creditAnnualTaxAdvantage,
+  creditDownPayment,
   data,
   horizonYears,
   leasingBuyoutOption,
+  leasingDownPayment,
   leasingResidualValue,
   leasingSummary,
   metric,
@@ -125,9 +134,11 @@ function CarFinancingChartCard({
 }: {
   creditSummary: CarFinancingSummary;
   creditAnnualTaxAdvantage: number;
+  creditDownPayment: number;
   data: CarChartPoint[];
   horizonYears: number;
   leasingBuyoutOption: boolean;
+  leasingDownPayment: number;
   leasingResidualValue: number;
   leasingSummary: CarFinancingSummary;
   metric: CarChartMetric;
@@ -300,11 +311,11 @@ function CarFinancingChartCard({
         <div className="mt-3 rounded-lg border border-slate-200/50 bg-slate-200/35 px-3 py-3 text-sm font-bold text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
           Total money paid at the end:{' '}
           <span className="text-blue-700">
-            Leasing {currency(calculateLeasingTotalMoneyPaid({ buyoutOption: leasingBuyoutOption, residualValue: leasingResidualValue, summary: leasingSummary }))} CHF
+            Leasing {currency(calculateLeasingTotalMoneyPaid({ buyoutOption: leasingBuyoutOption, downPayment: leasingDownPayment, residualValue: leasingResidualValue, summary: leasingSummary }))} CHF
           </span>
           <span className="text-slate-500">, </span>
           <span className="text-emerald-700">
-            Credit {currency(calculateCreditTotalMoneyPaid({ annualTaxAdvantage: creditAnnualTaxAdvantage, summary: creditSummary }))} CHF
+            Credit {currency(calculateCreditTotalMoneyPaid({ annualTaxAdvantage: creditAnnualTaxAdvantage, downPayment: creditDownPayment, summary: creditSummary }))} CHF
           </span>
           <span className="group relative ml-1 inline-flex align-super">
             <button
@@ -335,14 +346,16 @@ function calculateTotalMoneyPaid(summary: CarFinancingSummary) {
 
 function calculateLeasingTotalMoneyPaid({
   buyoutOption,
+  downPayment,
   residualValue,
   summary,
 }: {
   buyoutOption: boolean;
+  downPayment: number;
   residualValue: number;
   summary: CarFinancingSummary;
 }) {
-  return calculateTotalMoneyPaid(summary) + (buyoutOption ? Math.max(residualValue, 0) : 0);
+  return Math.max(downPayment, 0) + calculateTotalMoneyPaid(summary) + (buyoutOption ? Math.max(residualValue, 0) : 0);
 }
 
 function calculateCreditTaxSavings({
@@ -357,12 +370,14 @@ function calculateCreditTaxSavings({
 
 function calculateCreditTotalMoneyPaid({
   annualTaxAdvantage,
+  downPayment,
   summary,
 }: {
   annualTaxAdvantage: number;
+  downPayment: number;
   summary: CarFinancingSummary;
 }) {
-  return calculateTotalMoneyPaid(summary) - calculateCreditTaxSavings({ annualTaxAdvantage, summary });
+  return Math.max(downPayment, 0) + calculateTotalMoneyPaid(summary) - calculateCreditTaxSavings({ annualTaxAdvantage, summary });
 }
 
 function BorrowedBadge({

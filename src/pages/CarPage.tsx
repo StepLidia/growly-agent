@@ -165,6 +165,7 @@ export function CarPage() {
         horizonYears={planningHorizon}
         leasingAnnualInterestRate={leasingRate}
         leasingBuyoutOption={formValues.leasingBuyoutOption === true}
+        leasingDownPayment={parseCarMoneyInput(formValues.leasingDownPayment)}
         leasingResidualValue={parseCarMoneyInput(formValues.leasingResidualValue)}
         leasingSummary={leasingSummary}
       />
