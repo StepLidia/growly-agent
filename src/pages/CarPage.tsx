@@ -30,6 +30,7 @@ import { getPercent } from '../calculations/percent';
 import { CarFinancingCharts } from '../components/CarFinancingCharts';
 import { tooltipClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
+import { useEditableNumber } from '../hooks/useEditableNumber';
 
 const CAR_MODEL_PATH = '/models/McLaren.optimized.glb';
 const CAR_INPUTS_STORAGE_KEY = 'growly-car-inputs-v1';
@@ -425,6 +426,13 @@ function CarTextField({
   suffix?: string;
   value: string | boolean;
 }) {
+  const isMoney = suffix === 'CHF';
+  const { inputValue, onInputChange } = useEditableNumber(
+    parseCarMoneyInput(value),
+    (nextValue) => onChange(id, String(nextValue)),
+    isMoney ? { format: 'money' } : undefined,
+  );
+
   return (
     <label className="grid min-w-0 grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_9rem] sm:gap-3">
       <span className={`${typeof label === 'string' ? 'truncate' : 'min-w-0'} text-sm font-medium text-slate-800`}>
@@ -434,10 +442,17 @@ function CarTextField({
         <input
           aria-label={getCarFieldAriaLabel(label)}
           className="w-full min-w-0 bg-transparent text-right font-black text-slate-950 outline-none"
-          inputMode="decimal"
+          inputMode={isMoney ? 'numeric' : 'decimal'}
           type="text"
-          value={typeof value === 'string' ? value : ''}
-          onChange={(event) => onChange(id, event.currentTarget.value)}
+          value={isMoney ? inputValue : typeof value === 'string' ? value : ''}
+          onChange={(event) => {
+            if (isMoney) {
+              onInputChange(event.currentTarget.value);
+              return;
+            }
+
+            onChange(id, event.currentTarget.value);
+          }}
         />
         {suffix && <span className="whitespace-nowrap text-sm font-normal text-slate-600">{suffix}</span>}
       </span>
