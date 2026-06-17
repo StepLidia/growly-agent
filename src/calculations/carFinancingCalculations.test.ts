@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateCreditSummary,
+  calculateEstimatedLeaseResidualValue,
   calculateLeasingSummary,
   buildCarFinancingProjection,
   buildCarNetGainProjection,
@@ -13,6 +14,42 @@ describe('car financing calculations', () => {
     expect(parseCarMoneyInput('5.49')).toBe(5.49);
     expect(parseCarMoneyInput(true)).toBe(0);
     expect(parseCarMoneyInput('not a number')).toBe(0);
+  });
+
+  it('estimates lease residual value from price, duration, and annual mileage', () => {
+    expect(calculateEstimatedLeaseResidualValue({
+      annualMileage: 12000,
+      durationMonths: 36,
+      vehiclePrice: 52500,
+    })).toBe(26300);
+  });
+
+  it('lowers lease residual value when annual mileage increases', () => {
+    const lowerMileageResidual = calculateEstimatedLeaseResidualValue({
+      annualMileage: 10000,
+      durationMonths: 36,
+      vehiclePrice: 52500,
+    });
+    const higherMileageResidual = calculateEstimatedLeaseResidualValue({
+      annualMileage: 30000,
+      durationMonths: 36,
+      vehiclePrice: 52500,
+    });
+
+    expect(higherMileageResidual).toBeLessThan(lowerMileageResidual);
+  });
+
+  it('returns zero estimated residual value for invalid lease inputs', () => {
+    expect(calculateEstimatedLeaseResidualValue({
+      annualMileage: 12000,
+      durationMonths: 0,
+      vehiclePrice: 52500,
+    })).toBe(0);
+    expect(calculateEstimatedLeaseResidualValue({
+      annualMileage: 12000,
+      durationMonths: 36,
+      vehiclePrice: 0,
+    })).toBe(0);
   });
 
   it('calculates leasing payment and total interest from depreciation amount', () => {

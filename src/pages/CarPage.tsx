@@ -22,6 +22,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import {
   calculateCreditSummary,
+  calculateEstimatedLeaseResidualValue,
   calculateLeasingSummary,
   parseCarMoneyInput,
   type CarFinancingSummary as CalculatedCarFinancingSummary,
@@ -61,15 +62,22 @@ const initialCarFormValues: CarFormValues = {
 
 export function CarPage() {
   const savedCarInputs = useRef(readSavedCarInputs()).current;
+  const lastAutoLeasingResidualValue = useRef<string | null>(null);
   const [formValues, setFormValues] = useState<CarFormValues>(() => mergeSavedCarFormValues(savedCarInputs.formValues));
   const [planningHorizon, setPlanningHorizon] = useState(() => getSavedCarPlanningHorizon(savedCarInputs.planningHorizon));
   const leasingRate = parseCarMoneyInput(formValues.leasingRate);
   const creditInterestRate = parseCarMoneyInput(formValues.creditInterestRate);
+  const leasingResidualValue = parseCarMoneyInput(formValues.leasingResidualValue);
+  const estimatedLeasingResidualValue = calculateEstimatedLeaseResidualValue({
+    annualMileage: parseCarMoneyInput(formValues.leasingAnnualMileage),
+    durationMonths: parseCarMoneyInput(formValues.leasingDuration),
+    vehiclePrice: parseCarMoneyInput(formValues.leasingVehiclePrice),
+  });
   const leasingSummary = calculateLeasingSummary({
     annualInterestRate: leasingRate,
     downPayment: parseCarMoneyInput(formValues.leasingDownPayment),
     durationMonths: parseCarMoneyInput(formValues.leasingDuration),
-    residualValue: parseCarMoneyInput(formValues.leasingResidualValue),
+    residualValue: leasingResidualValue,
     vehiclePrice: parseCarMoneyInput(formValues.leasingVehiclePrice),
   });
   const creditSummary = calculateCreditSummary({
@@ -89,6 +97,23 @@ export function CarPage() {
   useEffect(() => {
     saveCarInputs({ formValues, planningHorizon });
   }, [formValues, planningHorizon]);
+
+  useEffect(() => {
+    const previousAutoResidualValue = lastAutoLeasingResidualValue.current;
+    const nextResidualValue = String(estimatedLeasingResidualValue);
+
+    setFormValues((currentValues) => {
+      if (previousAutoResidualValue !== null && currentValues.leasingResidualValue !== previousAutoResidualValue) {
+        return currentValues;
+      }
+
+      return {
+        ...currentValues,
+        leasingResidualValue: nextResidualValue,
+      };
+    });
+    lastAutoLeasingResidualValue.current = nextResidualValue;
+  }, [estimatedLeasingResidualValue]);
 
   return (
     <section className="space-y-5">
@@ -126,7 +151,13 @@ export function CarPage() {
             <CarTextField id="leasingDuration" label="Lease duration" suffix="months" value={formValues.leasingDuration} onChange={updateField} />
             <CarTextField id="leasingRate" label="Lease rate" suffix="%" value={formValues.leasingRate} onChange={updateField} />
             <CarTextField id="leasingAnnualMileage" label="Annual mileage" suffix="km" value={formValues.leasingAnnualMileage} onChange={updateField} />
-            <CarTextField id="leasingResidualValue" label="Residual value" suffix="CHF" value={formValues.leasingResidualValue} onChange={updateField} />
+            <CarTextField
+              id="leasingResidualValue"
+              label="Residual value"
+              suffix="CHF"
+              value={formValues.leasingResidualValue}
+              onChange={updateField}
+            />
             <CarToggleField
               id="leasingBuyoutOption"
               label="Buyout option at the end"
@@ -207,7 +238,7 @@ export function CarPage() {
         leasingBuyoutOption={formValues.leasingBuyoutOption === true}
         leasingDownPayment={parseCarMoneyInput(formValues.leasingDownPayment)}
         leasingExpectedResaleValue={parseCarMoneyInput(formValues.leasingExpectedResaleValue)}
-        leasingResidualValue={parseCarMoneyInput(formValues.leasingResidualValue)}
+        leasingResidualValue={leasingResidualValue}
         leasingVehiclePrice={parseCarMoneyInput(formValues.leasingVehiclePrice)}
         leasingSummary={leasingSummary}
       />

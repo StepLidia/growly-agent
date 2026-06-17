@@ -38,6 +38,28 @@ export function parseCarMoneyInput(value: string | boolean) {
   return Number.isFinite(parsedValue) ? parsedValue : 0;
 }
 
+export function calculateEstimatedLeaseResidualValue({
+  annualMileage,
+  durationMonths,
+  vehiclePrice,
+}: {
+  annualMileage: number;
+  durationMonths: number;
+  vehiclePrice: number;
+}) {
+  const safeVehiclePrice = normalizeMoney(vehiclePrice);
+  const safeDurationYears = normalizeDuration(durationMonths) / 12;
+
+  if (safeVehiclePrice <= 0 || safeDurationYears <= 0) {
+    return 0;
+  }
+
+  const annualDepreciationRate = calculateLeaseDepreciationRate(annualMileage);
+  const residualValue = safeVehiclePrice * (1 - annualDepreciationRate) ** safeDurationYears;
+
+  return roundToNearest(residualValue, 50);
+}
+
 export function calculateLeasingSummary(inputs: CarFinancingInputs): CarFinancingSummary {
   const vehiclePrice = normalizeMoney(inputs.vehiclePrice);
   const downPayment = normalizeMoney(inputs.downPayment);
@@ -241,6 +263,24 @@ function calculateMonthlyPayment({
   const compoundFactor = (1 + monthlyRate) ** durationMonths;
 
   return principal * ((monthlyRate * compoundFactor) / (compoundFactor - 1));
+}
+
+function calculateLeaseDepreciationRate(annualMileage: number) {
+  const baselineAnnualMileage = 15000;
+  const baseAnnualDepreciationRate = 0.215;
+  const depreciationMileageStep = 0.003;
+  const safeAnnualMileage = normalizeMoney(annualMileage);
+  const mileageAdjustment = ((safeAnnualMileage - baselineAnnualMileage) / 1000) * depreciationMileageStep;
+
+  return clamp(baseAnnualDepreciationRate + mileageAdjustment, 0.1, 0.35);
+}
+
+function roundToNearest(value: number, step: number) {
+  return Math.round(value / step) * step;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function normalizeMoney(value: number) {
