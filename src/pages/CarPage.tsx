@@ -426,11 +426,11 @@ function CarTextField({
   suffix?: string;
   value: string | boolean;
 }) {
-  const isMoney = suffix === 'CHF';
+  const isGroupedNumber = suffix === 'CHF' || suffix === 'km';
   const { inputValue, onInputChange } = useEditableNumber(
     parseCarMoneyInput(value),
     (nextValue) => onChange(id, String(nextValue)),
-    isMoney ? { format: 'money' } : undefined,
+    isGroupedNumber ? { format: 'money' } : undefined,
   );
 
   return (
@@ -442,11 +442,11 @@ function CarTextField({
         <input
           aria-label={getCarFieldAriaLabel(label)}
           className="w-full min-w-0 bg-transparent text-right font-black text-slate-950 outline-none"
-          inputMode={isMoney ? 'numeric' : 'decimal'}
+          inputMode={isGroupedNumber ? 'numeric' : 'decimal'}
           type="text"
-          value={isMoney ? inputValue : typeof value === 'string' ? value : ''}
+          value={isGroupedNumber ? inputValue : typeof value === 'string' ? value : ''}
           onChange={(event) => {
-            if (isMoney) {
+            if (isGroupedNumber) {
               onInputChange(event.currentTarget.value);
               return;
             }
