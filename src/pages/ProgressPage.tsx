@@ -324,7 +324,7 @@ function BaselineCard({
   }
 
   return (
-    <section className={`glass-panel flex w-full max-w-[calc(100vw-3rem)] min-w-0 flex-col p-5 sm:max-w-full ${isMonthPickerOpen ? 'z-30' : ''}`}>
+    <section className={`glass-panel flex w-full min-w-0 flex-col p-5 ${isMonthPickerOpen ? 'z-30' : ''}`}>
       <div className="glass-panel-floating-layer flex items-start gap-4">
         <span className="group relative">
           <button
@@ -400,7 +400,7 @@ function MonthlyAssetBalancesCard({
   onSave: () => void;
 }) {
   return (
-    <section className={`glass-panel w-full max-w-[calc(100vw-3rem)] min-w-0 p-5 sm:max-w-full ${className}`}>
+    <section className={`glass-panel w-full min-w-0 p-5 ${className}`}>
       <div className="flex min-w-0 items-center gap-3">
         <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl border ${colorClasses.violet.border} ${colorClasses.violet.bg} ${colorClasses.violet.text}`}>
           <Pencil className="h-5 w-5" />
@@ -499,7 +499,7 @@ function HowProgressWorksCard({ className = '' }: { className?: string }) {
   ];
 
   return (
-    <section className={`glass-panel flex h-full w-full max-w-[calc(100vw-3rem)] min-w-0 flex-col p-5 sm:max-w-full ${className}`}>
+    <section className={`glass-panel flex h-full w-full min-w-0 flex-col p-5 ${className}`}>
       <div className="flex items-center gap-3">
         <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl border ${colorClasses.cyan.border} ${colorClasses.cyan.bg} ${colorClasses.cyan.text}`}>
           <Info className="h-5 w-5" />
@@ -602,7 +602,7 @@ function ProgressWealthChartCard({
   }
 
   return (
-    <section className={`glass-panel w-full max-w-[calc(100vw-3rem)] min-w-0 p-5 sm:max-w-full ${className}`}>
+    <section className={`glass-panel w-full min-w-0 p-5 ${className}`}>
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="text-sm font-bold text-slate-950">Actual vs Planned Wealth</h2>
@@ -1047,7 +1047,7 @@ function ProgressAssetTargetBarsCard({
   const safeProjectionYears = Math.max(1, Math.round(projectionYears));
 
   return (
-    <section className="glass-panel w-full max-w-[calc(100vw-3rem)] min-w-0 p-5 sm:max-w-full">
+    <section className="glass-panel w-full min-w-0 p-5">
       <div>
         <h2 className="text-sm font-bold text-slate-950">Asset Goal Progress</h2>
         <p className="mt-1 text-sm font-semibold text-slate-600">
@@ -1206,7 +1206,7 @@ function ProgressVarianceChartCard({
   const gradientPrefix = `progress-variance-${chart.id}`;
 
   return (
-    <section className="glass-panel w-full max-w-[calc(100vw-3rem)] min-w-0 p-5 sm:max-w-full">
+    <section className="glass-panel w-full min-w-0 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-slate-950">
@@ -1439,7 +1439,7 @@ function ProgressMonthlyRecordsEditor({
   }
 
   return (
-    <section className={`glass-panel w-full max-w-[calc(100vw-3rem)] min-w-0 p-5 sm:max-w-full ${isYearPickerOpen ? 'z-50' : ''}`}>
+    <section className={`glass-panel w-full min-w-0 p-5 ${isYearPickerOpen ? 'z-50' : ''}`}>
       <div className="glass-panel-floating-layer flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-slate-950">Record Your Actual Balances</h2>
@@ -1579,7 +1579,7 @@ function ProgressMetricCard({
   value: string;
 }) {
   return (
-    <section className="glass-panel w-full max-w-[calc(100vw-3rem)] min-w-0 p-5 sm:max-w-full">
+    <section className="glass-panel w-full min-w-0 p-5">
       <div className="flex items-start gap-4">
         <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-3xl ${iconClassName}`}>
           <Icon className="h-7 w-7" />

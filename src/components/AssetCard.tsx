@@ -24,7 +24,7 @@ export function AssetCard({
   const isPillar2 = asset.id === 'pillar2';
 
   return (
-    <article className="glass-panel w-full max-w-[calc(100vw-3rem)] min-w-0 overflow-visible p-4 hover:z-30 focus-within:z-30 sm:max-w-full">
+    <article className="glass-panel w-full min-w-0 overflow-visible p-4 hover:z-30 focus-within:z-30">
       <div className="flex min-w-0 items-center gap-3">
         <div className={`grid h-10 w-10 place-items-center rounded-2xl border ${colors.border} ${colors.bg} ${colors.text}`}>
           <Icon className="h-5 w-5" />
@@ -120,7 +120,7 @@ function ReadonlyField({ label, value, suffix }: { label: string; value: number;
       <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-slate-800">
         <span className="truncate">{label}</span>
       </span>
-      <span className="glass-input grid w-[calc(100vw-5rem)] max-w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2 text-sm font-normal text-slate-700 sm:w-full">
+      <span className="glass-input grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2 text-sm font-normal text-slate-700">
         <span className="min-w-0 flex-1 text-right">{value}</span>
         <span className="whitespace-nowrap text-sm font-normal text-slate-600">{suffix}</span>
       </span>
@@ -154,7 +154,7 @@ function EditableField({
         <span className="truncate">{label}</span>
         {labelExtra}
       </span>
-      <span className="glass-input grid w-[calc(100vw-5rem)] max-w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2 text-sm sm:w-full">
+      <span className="glass-input grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2 text-sm">
         <input
           aria-label={label}
           className="w-full min-w-0 bg-transparent text-right font-black text-slate-950 outline-none"

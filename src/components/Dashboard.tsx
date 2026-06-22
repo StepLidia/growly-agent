@@ -184,7 +184,7 @@ export function Dashboard() {
       />
       <div className="grid min-h-screen grid-cols-1 md:grid-cols-[232px_1fr]">
         <Sidebar />
-        <section className="flex min-h-screen min-w-0 flex-col pb-4 pl-4 pr-8 pt-20 sm:px-5 md:py-4 xl:px-6">
+        <section className="flex min-h-screen min-w-0 flex-col px-4 pb-4 pt-20 sm:px-5 md:py-4 xl:px-6">
           <Suspense fallback={<RouteLoadingState />}>
             <Routes>
               <Route
