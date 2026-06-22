@@ -44,7 +44,7 @@ export function MobileSidebarDrawer({ isOpen, onClose }: MobileSidebarDrawerProp
       >
         <button
           aria-label="Close navigation"
-          className="absolute right-4 grid h-10 w-10 place-items-center rounded-lg text-slate-700 transition hover:bg-white/45"
+          className="mb-5 grid h-10 w-10 shrink-0 place-items-center rounded-lg text-slate-700 transition hover:bg-white/45"
           type="button"
           onClick={onClose}
         >
