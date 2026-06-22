@@ -5,11 +5,14 @@ const APP_NAME = 'Growly';
 const DEFAULT_SITE_URL = 'https://swiss-growly.com';
 const ORGANIZATION_URL = 'https://steplidia.pages.dev';
 const ORGANIZATION_ID = `${ORGANIZATION_URL}/#organization`;
+const PRIVATE_OVERVIEW_PATH = '/overview-private-lidia';
 const SEO_IMAGE_PATH = '/images/logo.webp';
 const SEO_IMAGE_ALT = 'Growly app logo for a Swiss wealth, mortgage and retirement planning dashboard.';
 
 type RouteSeoMetadata = {
+  canonicalPath?: string;
   description: string;
+  indexable?: boolean;
   path: string;
   title: string;
 };
@@ -68,11 +71,12 @@ export function SeoMetadata() {
 
   useEffect(() => {
     const metadata = getRouteSeoMetadata(pathname);
-    const canonicalUrl = buildAbsoluteUrl(metadata.path);
+    const canonicalUrl = buildAbsoluteUrl(metadata.canonicalPath ?? metadata.path);
     const imageUrl = buildAbsoluteUrl(SEO_IMAGE_PATH);
 
     document.title = metadata.title;
     upsertMeta('name', 'description', metadata.description);
+    upsertMeta('name', 'robots', metadata.indexable === false ? 'noindex, nofollow' : 'index, follow, max-image-preview:large');
     upsertMeta('property', 'og:site_name', APP_NAME);
     upsertMeta('property', 'og:type', 'website');
     upsertMeta('property', 'og:title', metadata.title);
@@ -86,13 +90,28 @@ export function SeoMetadata() {
     upsertMeta('name', 'twitter:image', imageUrl);
     upsertMeta('name', 'twitter:image:alt', SEO_IMAGE_ALT);
     upsertCanonical(canonicalUrl);
-    upsertStructuredData(metadata, canonicalUrl, imageUrl);
+
+    if (metadata.indexable === false) {
+      removeStructuredData();
+    } else {
+      upsertStructuredData(metadata, canonicalUrl, imageUrl);
+    }
   }, [pathname]);
 
   return null;
 }
 
 function getRouteSeoMetadata(pathname: string) {
+  if (pathname === PRIVATE_OVERVIEW_PATH) {
+    return {
+      ...routeSeoMetadata[0],
+      canonicalPath: '/',
+      indexable: false,
+      path: pathname,
+      title: 'Private Overview - Growly',
+    };
+  }
+
   return routeSeoMetadata.find((metadata) => metadata.path === pathname) ?? routeSeoMetadata[0];
 }
 
@@ -182,4 +201,8 @@ function upsertStructuredData(metadata: RouteSeoMetadata, canonicalUrl: string, 
   if (!script.parentElement) {
     document.head.append(script);
   }
+}
+
+function removeStructuredData() {
+  document.getElementById('growly-structured-data')?.remove();
 }

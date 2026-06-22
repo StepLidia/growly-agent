@@ -9,8 +9,10 @@ import {
 import { type calculateDashboard, type FinancialAsset } from '../finance';
 
 type OverviewPageProps = {
+  backgroundImagePath?: string;
   dashboard: ReturnType<typeof calculateDashboard>;
   projectionYears: number;
+  showDecorativeImages?: boolean;
 };
 
 type ProgressBaseline = {
@@ -84,7 +86,12 @@ const overviewCardStyles = [
   },
 ] as const;
 
-export function OverviewPage({ dashboard, projectionYears }: OverviewPageProps) {
+export function OverviewPage({
+  backgroundImagePath = '/images/background.webp',
+  dashboard,
+  projectionYears,
+  showDecorativeImages = true,
+}: OverviewPageProps) {
   const currentDate = new Date();
   const currentProgressMonth = getProgressMonthFromDate(currentDate);
   const baseline = readSavedProgressBaseline();
@@ -118,25 +125,35 @@ export function OverviewPage({ dashboard, projectionYears }: OverviewPageProps) 
 
   return (
     <section
-      className="relative flex min-h-152 flex-1 flex-col overflow-hidden rounded-lg border border-slate-200/60 bg-cover bg-bottom px-5 pt-6 pb-40 shadow-sm sm:pb-48 md:min-h-144 md:justify-center md:px-8 md:pt-5 md:pb-48 xl:pt-6 xl:pb-56"
-      style={{ backgroundImage: 'url("/images/background.webp")' }}
+      className={`relative flex min-h-152 flex-1 flex-col overflow-hidden rounded-lg border border-slate-200/60 bg-cover bg-bottom px-5 pt-6 shadow-sm md:min-h-144 md:px-8 md:pt-5 xl:pt-6 ${
+        showDecorativeImages ? 'pb-40 sm:pb-48 md:justify-center md:pb-48 xl:pb-56' : 'pb-6 md:pb-5 xl:pb-6'
+      }`}
+      style={{ backgroundImage: `url("${backgroundImagePath}")` }}
     >
       <div className="absolute inset-0 bg-linear-to-br from-white/80 via-sky-50/60 to-yellow-50/64" aria-hidden="true" />
-      <img
-        className="rocking-grandma pointer-events-none absolute -bottom-3 left-2 z-20 w-64 object-contain opacity-75 drop-shadow-md saturate-65 sm:w-76 md:-left-9 md:w-84 xl:w-92 2xl:left-6"
-        src="/images/grandma.webp"
-        alt=""
-        aria-hidden="true"
-      />
-      <div className="butterfly-corner-flight pointer-events-none absolute bottom-12 right-10 z-20 w-14 sm:bottom-14 sm:right-14 sm:w-16 md:bottom-16 md:right-18 xl:bottom-20 xl:right-24 xl:w-20" aria-hidden="true">
-        <img
-          className="butterfly-flutter block w-full object-contain opacity-100 drop-shadow-md saturate-150"
-          src="/images/butterfly.webp"
-          alt=""
-        />
-      </div>
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center gap-5 md:gap-7">
-        <div className="max-w-4xl text-center mt-4">
+      {showDecorativeImages && (
+        <>
+          <img
+            className="rocking-grandma pointer-events-none absolute -bottom-3 left-2 z-20 w-64 object-contain opacity-75 drop-shadow-md saturate-65 sm:w-76 md:-left-9 md:w-84 xl:w-92 2xl:left-6"
+            src="/images/grandma.webp"
+            alt=""
+            aria-hidden="true"
+          />
+          <div className="butterfly-corner-flight pointer-events-none absolute bottom-12 right-10 z-20 w-14 sm:bottom-14 sm:right-14 sm:w-16 md:bottom-16 md:right-18 xl:bottom-20 xl:right-24 xl:w-20" aria-hidden="true">
+            <img
+              className="butterfly-flutter block w-full object-contain opacity-100 drop-shadow-md saturate-150"
+              src="/images/butterfly.webp"
+              alt=""
+            />
+          </div>
+        </>
+      )}
+      <div
+        className={`relative mx-auto flex w-full max-w-6xl flex-col items-center ${
+          showDecorativeImages ? 'gap-5 md:gap-7' : 'min-h-0 flex-1'
+        }`}
+      >
+        <div className="mt-4 max-w-4xl text-center">
           <h1 className="text-4xl font-bold tracking-normal text-slate-800 md:text-4xl 2xl:text-5xl">
             Track your financial future
           </h1>
@@ -145,50 +162,52 @@ export function OverviewPage({ dashboard, projectionYears }: OverviewPageProps) 
           </p>
         </div>
 
-        <Link
-          aria-label="Open financial details"
-          className="w-full max-w-4xl rounded-lg transition hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-sky-700/30 xl:max-w-5xl"
-          to="/details"
-        >
-          <div className="mx-auto rounded-lg border border-white/80 bg-white/50 p-3 shadow-xl shadow-slate-300/30 backdrop-blur-md md:p-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 xl:gap-4">
-              {overviewCardStyles.map(({ id, label, cardClass, icon: Icon, iconClass, imagePosition, labelClass, valueClass, washClass }, index) => (
-                <div
-                  key={label}
-                  className={`relative min-h-48 overflow-hidden rounded-lg border ${cardClass} px-3 py-4 text-center shadow-md shadow-slate-300/30 backdrop-blur-sm xl:min-h-56 xl:px-4 xl:py-6`}
-                >
+        <div className={showDecorativeImages ? 'contents' : 'flex min-h-0 w-full flex-1 items-center justify-center py-6'}>
+          <Link
+            aria-label="Open financial details"
+            className="w-full max-w-4xl rounded-lg transition hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-sky-700/30 xl:max-w-5xl"
+            to="/details"
+          >
+            <div className="mx-auto rounded-lg border border-white/80 bg-white/50 p-3 shadow-xl shadow-slate-300/30 backdrop-blur-md md:p-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 xl:gap-4">
+                {overviewCardStyles.map(({ id, label, cardClass, icon: Icon, iconClass, imagePosition, labelClass, valueClass, washClass }, index) => (
                   <div
-                    className="pointer-events-none absolute inset-0 bg-cover opacity-30"
-                    aria-hidden="true"
-                    style={{
-                      backgroundImage: 'url("/images/background.webp")',
-                      backgroundPosition: imagePosition,
-                    }}
-                  />
-                  <div className={`pointer-events-none absolute inset-0 ${washClass}`} aria-hidden="true" />
-                  <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-white/70 via-white/45 to-white/20" aria-hidden="true" />
-                  <div className="relative flex h-full flex-col items-center justify-center gap-4">
-                    {id === 'current' ? (
-                      <CurrentWealthProgressRing
-                        amount={cards[index]}
-                        amountClassName={valueClass}
-                        progressPercent={currentWealthProgressPercent}
-                      />
-                    ) : (
-                      <>
-                        <Icon className={`h-7 w-7 xl:h-8 xl:w-8 ${iconClass}`} strokeWidth={1.6} />
-                        <p className={`text-sm font-bold leading-5 ${labelClass}`}>{label}</p>
-                        <p className={`text-2xl font-black tracking-normal xl:text-3xl ${valueClass}`}>
-                          {cards[index]}
-                        </p>
-                      </>
-                    )}
+                    key={label}
+                    className={`relative min-h-48 overflow-hidden rounded-lg border ${cardClass} px-3 py-4 text-center shadow-md shadow-slate-300/30 backdrop-blur-sm xl:min-h-56 xl:px-4 xl:py-6`}
+                  >
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-cover opacity-30"
+                      aria-hidden="true"
+                      style={{
+                        backgroundImage: `url("${backgroundImagePath}")`,
+                        backgroundPosition: imagePosition,
+                      }}
+                    />
+                    <div className={`pointer-events-none absolute inset-0 ${washClass}`} aria-hidden="true" />
+                    <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-white/70 via-white/45 to-white/20" aria-hidden="true" />
+                    <div className="relative flex h-full flex-col items-center justify-center gap-4">
+                      {id === 'current' ? (
+                        <CurrentWealthProgressRing
+                          amount={cards[index]}
+                          amountClassName={valueClass}
+                          progressPercent={currentWealthProgressPercent}
+                        />
+                      ) : (
+                        <>
+                          <Icon className={`h-7 w-7 xl:h-8 xl:w-8 ${iconClass}`} strokeWidth={1.6} />
+                          <p className={`text-sm font-bold leading-5 ${labelClass}`}>{label}</p>
+                          <p className={`text-2xl font-black tracking-normal xl:text-3xl ${valueClass}`}>
+                            {cards[index]}
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </Link>
+          </Link>
+        </div>
       </div>
     </section>
   );

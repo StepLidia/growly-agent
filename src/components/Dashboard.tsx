@@ -5,6 +5,7 @@ import { buttonClasses } from '../constants/buttonStyles';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { MobileSidebarDrawer, Sidebar } from './Sidebar';
 import { tooltipClasses } from '../constants/tooltipStyles';
+import { LandingPage } from '../pages/LandingPage';
 import { OverviewPage } from '../pages/OverviewPage';
 import { downloadLocalStorageBackup, importLocalStorageBackup } from '../storage/localStorageBackup';
 
@@ -188,6 +189,15 @@ export function Dashboard() {
             <Routes>
               <Route
                 path="/"
+                element={
+                  <LandingPage
+                    dashboard={dashboard}
+                    projectionYears={projectionYears}
+                  />
+                }
+              />
+              <Route
+                path="/overview-private-lidia"
                 element={
                   <OverviewPage
                     dashboard={dashboard}
