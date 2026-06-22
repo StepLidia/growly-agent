@@ -125,9 +125,8 @@ export function OverviewPage({
 
   return (
     <section
-      className={`relative flex min-h-152 flex-1 flex-col overflow-hidden rounded-lg border border-slate-200/60 bg-cover bg-bottom px-5 pt-6 shadow-sm md:min-h-144 md:px-8 md:pt-5 xl:pt-6 ${
-        showDecorativeImages ? 'pb-40 sm:pb-48 md:justify-center md:pb-48 xl:pb-56' : 'pb-6 md:pb-5 xl:pb-6'
-      }`}
+      className={`relative flex min-h-152 flex-1 flex-col overflow-hidden rounded-lg border border-slate-200/60 bg-cover bg-bottom px-5 pt-6 shadow-sm md:min-h-144 md:px-8 md:pt-5 xl:pt-6 ${showDecorativeImages ? 'pb-40 sm:pb-48 md:justify-center md:pb-48 xl:pb-56' : 'pb-6 md:pb-5 xl:pb-6'
+        }`}
       style={{ backgroundImage: `url("${backgroundImagePath}")` }}
     >
       <div className="absolute inset-0 bg-linear-to-br from-white/80 via-sky-50/60 to-yellow-50/64" aria-hidden="true" />
@@ -149,20 +148,21 @@ export function OverviewPage({
         </>
       )}
       <div
-        className={`relative mx-auto flex w-full max-w-6xl flex-col items-center ${
-          showDecorativeImages ? 'gap-5 md:gap-7' : 'min-h-0 flex-1'
-        }`}
+        className={`relative mx-auto flex w-full max-w-6xl flex-col items-center ${showDecorativeImages
+          ? 'gap-5 md:gap-7'
+          : 'min-h-0 flex-1 justify-center gap-10 py-8 md:gap-12 md:py-10 xl:gap-16'
+          }`}
       >
-        <div className="mt-4 max-w-4xl text-center">
-          <h1 className="text-4xl font-bold tracking-normal text-slate-800 md:text-4xl 2xl:text-5xl">
+        <div className={`max-w-4xl text-center ${showDecorativeImages ? 'mt-4' : ''}`}>
+          <h1 className="text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl 2xl:text-6xl">
             Track your financial future
           </h1>
-          <p className="mt-5 text-lg font-bold text-slate-600 md:text-xl">
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-bold leading-relaxed text-slate-700 md:mt-5 md:text-xl">
             Visualize today, plan for tomorrow, achieve your dreams
           </p>
         </div>
 
-        <div className={showDecorativeImages ? 'contents' : 'flex min-h-0 w-full flex-1 items-center justify-center py-6'}>
+        <div className={showDecorativeImages ? 'contents' : 'flex w-full justify-center'}>
           <Link
             aria-label="Open financial details"
             className="w-full max-w-4xl rounded-lg transition hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-sky-700/30 xl:max-w-5xl"
