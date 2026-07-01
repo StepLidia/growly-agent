@@ -18,6 +18,7 @@ import {
   buildOptimisticProgressProjection,
   buildPessimisticProgressProjection,
   buildPlannedProgressProjection,
+  findLatestProgressRecordOnOrBefore,
 } from './progressCalculations';
 
 describe('progress calculations', () => {
@@ -124,6 +125,43 @@ describe('progress calculations', () => {
 
   it('calculates total balance from saved monthly balances', () => {
     expect(calculateTotalBalance({ investments: 40000, pillar2: 85000, pillar3: 15000, savings: 25000 })).toBe(165000);
+  });
+
+  it('finds the latest saved progress record up to the current month', () => {
+    const latestRecord = findLatestProgressRecordOnOrBefore(
+      {
+        '2026-04': {
+          balances: { savings: 100000 },
+          recordedAt: new Date(2026, 3, 1).toISOString(),
+        },
+        '2026-06': {
+          balances: { savings: 106000 },
+          recordedAt: new Date(2026, 5, 1).toISOString(),
+        },
+        '2026-08': {
+          balances: { savings: 112000 },
+          recordedAt: new Date(2026, 7, 1).toISOString(),
+        },
+      },
+      new Date(2026, 6, 1),
+    );
+
+    expect(latestRecord?.key).toBe('2026-06');
+    expect(latestRecord?.record.balances.savings).toBe(106000);
+  });
+
+  it('returns null when there is no saved progress record on or before the current month', () => {
+    expect(
+      findLatestProgressRecordOnOrBefore(
+        {
+          '2026-08': {
+            balances: { savings: 112000 },
+            recordedAt: new Date(2026, 7, 1).toISOString(),
+          },
+        },
+        new Date(2026, 6, 1),
+      ),
+    ).toBeNull();
   });
 
   it('builds asset target progress bars in projection years', () => {

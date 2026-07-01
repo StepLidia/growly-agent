@@ -46,6 +46,7 @@ import {
   calculateProgressTargetPercent,
   calculateTotalBalance,
   calculateYearsTracked,
+  findLatestProgressRecordOnOrBefore,
 } from '../calculations/progressCalculations';
 import { hoverTooltipClasses, tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency, type FinancialAsset } from '../finance';
@@ -126,9 +127,16 @@ export function ProgressPage({
   const currentDate = useMemo(() => new Date(), []);
   const currentProgressMonth = useMemo(() => getProgressMonthFromDate(currentDate), [currentDate]);
   const monthlyRecord = monthlyRecords[currentProgressMonth.key] ?? null;
-  const [assetBalances, setAssetBalances] = useState(() => getInitialProgressAssetBalances(assets, monthlyRecord));
-  const currentAssets = useMemo(() => getProgressCurrentAssets(assets, monthlyRecord), [assets, monthlyRecord]);
+  const latestSavedMonthlyRecord = useMemo(
+    () => findLatestProgressRecordOnOrBefore(monthlyRecords, currentDate),
+    [currentDate, monthlyRecords],
+  );
+  const activeMonthlyRecord = latestSavedMonthlyRecord?.record ?? null;
+  const assetBalanceSourceRecord = monthlyRecord ?? activeMonthlyRecord;
+  const [assetBalances, setAssetBalances] = useState(() => getInitialProgressAssetBalances(assets, assetBalanceSourceRecord));
+  const currentAssets = useMemo(() => getProgressCurrentAssets(assets, activeMonthlyRecord), [activeMonthlyRecord, assets]);
   const currentMonthLabel = formatProgressMonth(currentDate);
+  const activeMonthLabel = activeMonthlyRecord?.monthLabel ?? currentMonthLabel;
   const currentWealth = calculateCurrentWealth(currentAssets);
   const activeBaselineBalances = baseline?.balances ?? getProgressAssetBalances(currentAssets);
   const monthsTracked = baseline ? calculateMonthsTracked(new Date(baseline.recordedAt), currentDate) : 0;
@@ -182,8 +190,8 @@ export function ProgressPage({
   }
 
   useEffect(() => {
-    setAssetBalances(getInitialProgressAssetBalances(assets, monthlyRecord));
-  }, [assets, monthlyRecord]);
+    setAssetBalances(getInitialProgressAssetBalances(assets, assetBalanceSourceRecord));
+  }, [assetBalanceSourceRecord, assets]);
 
   function saveMonthlyRecord() {
     const nextRecord = {
@@ -246,7 +254,7 @@ export function ProgressPage({
           iconClassName="bg-amber-500/12 text-amber-500"
           title="Current Wealth"
           value={`${currency(currentWealth)} CHF`}
-          helper={`as of ${currentMonthLabel}`}
+          helper={`as of ${activeMonthLabel}`}
           helperClassName="text-amber-500"
         />
       </div>
@@ -255,7 +263,7 @@ export function ProgressPage({
           assets={assets}
           balances={assetBalances}
           currentMonthLabel={currentMonthLabel}
-          savedMonthLabel={monthlyRecord?.monthLabel}
+          savedMonthLabel={assetBalanceSourceRecord?.monthLabel}
           onBalanceChange={updateAssetBalance}
           onSave={saveMonthlyRecord}
         />

@@ -235,7 +235,7 @@ export function ExpensesPage({
           <div className="mt-3 grid gap-3 xl:grid-cols-2">
             <section className="glass-panel flex min-h-0 flex-col p-4 md:max-h-100">
               <h2 className="text-sm font-bold text-slate-950">Monthly Expense Distribution</h2>
-              <div className="mt-2 grid flex-1 place-content-center items-center gap-4 grid-cols-[minmax(9rem,13rem)_minmax(8rem,1fr)] sm:grid-cols-[minmax(11rem,15rem)_minmax(10rem,1fr)] md:grid-cols-[minmax(14rem,17rem)_minmax(9rem,18rem)] md:gap-7">
+              <div className={getExpenseDistributionLayoutClass(categories.length)}>
                 <ExpenseDonut categories={categories} totalExpenses={totalExpenses} />
                 <CategoryLegend categories={categories} />
               </div>
@@ -438,9 +438,11 @@ function MetricCard({
 
 function ExpenseDonut({ categories, totalExpenses }: { categories: ExpenseCategory[]; totalExpenses: number }) {
   const gradientPrefix = useId().replaceAll(':', '');
+  const sizeClassName = getExpenseDonutSizeClass(categories.length);
+  const isCompact = categories.length > 16;
 
   return (
-    <div className="relative h-44 min-h-44 sm:h-56 sm:min-h-56 md:h-72 md:min-h-72">
+    <div className={`relative ${sizeClassName}`}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <defs>
@@ -482,10 +484,12 @@ function ExpenseDonut({ categories, totalExpenses }: { categories: ExpenseCatego
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center text-center">
         <div>
-          <p className="text-sm font-bold text-slate-950 sm:text-3xl">
-            {currency(totalExpenses)} <span className="text-xs sm:text-sm">CHF</span>
+          <p className={`${isCompact ? 'text-xl sm:text-2xl' : 'text-sm sm:text-3xl'} font-bold text-slate-950`}>
+            {currency(totalExpenses)} <span className={isCompact ? 'text-xs' : 'text-xs sm:text-sm'}>CHF</span>
           </p>
-          <p className="mt-1.5 text-xs text-slate-700 sm:mt-2 sm:text-sm">Monthly Expenses</p>
+          <p className={`${isCompact ? 'mt-1 text-xs' : 'mt-1.5 text-xs sm:mt-2 sm:text-sm'} text-slate-700`}>
+            Monthly Expenses
+          </p>
         </div>
       </div>
     </div>
@@ -520,6 +524,22 @@ function chunkCategories(categories: ExpenseCategory[], maxPerColumn: number) {
     { length: Math.ceil(categories.length / maxPerColumn) },
     (_, index) => categories.slice(index * maxPerColumn, (index + 1) * maxPerColumn),
   );
+}
+
+function getExpenseDistributionLayoutClass(categoryCount: number) {
+  if (categoryCount > 16) {
+    return 'mt-2 grid flex-1 place-content-center items-center gap-4 grid-cols-[minmax(8rem,11rem)_minmax(0,1fr)] sm:grid-cols-[minmax(9rem,12rem)_minmax(0,1fr)] md:grid-cols-[minmax(10rem,12rem)_minmax(0,1fr)] md:gap-5';
+  }
+
+  return 'mt-2 grid flex-1 place-content-center items-center gap-4 grid-cols-[minmax(9rem,13rem)_minmax(8rem,1fr)] sm:grid-cols-[minmax(11rem,15rem)_minmax(10rem,1fr)] md:grid-cols-[minmax(14rem,17rem)_minmax(9rem,18rem)] md:gap-7';
+}
+
+function getExpenseDonutSizeClass(categoryCount: number) {
+  if (categoryCount > 16) {
+    return 'h-36 min-h-36 sm:h-44 sm:min-h-44 md:h-48 md:min-h-48';
+  }
+
+  return 'h-44 min-h-44 sm:h-56 sm:min-h-56 md:h-72 md:min-h-72';
 }
 
 function ExpenseBreakdownRow({

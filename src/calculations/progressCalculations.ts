@@ -50,6 +50,11 @@ export type ProgressChartActualPoint = {
   totalWealth: number;
 };
 
+export type LatestProgressRecordResult<TRecord> = {
+  key: string;
+  record: TRecord;
+};
+
 export type ProgressChartPoint = {
   actualWealth: number | null;
   monthLabel: string;
@@ -140,6 +145,24 @@ export function calculateProgressTargetYears(currentWealth: number, targetWealth
 
 export function calculateTotalBalance(balances: Record<string, number>) {
   return Object.values(balances).reduce((sum, balance) => sum + balance, 0);
+}
+
+export function findLatestProgressRecordOnOrBefore<TRecord extends { recordedAt: string }>(
+  records: Record<string, TRecord>,
+  referenceDate: Date,
+): LatestProgressRecordResult<TRecord> | null {
+  const referenceMonthValue = getProgressMonthSortValue(referenceDate);
+
+  return Object.entries(records)
+    .map(([key, record]) => ({
+      key,
+      monthValue: getProgressMonthSortValue(new Date(record.recordedAt)),
+      record,
+    }))
+    .filter(({ monthValue }) => Number.isFinite(monthValue) && monthValue <= referenceMonthValue)
+    .sort((first, second) => second.monthValue - first.monthValue)
+    .map(({ key, record }) => ({ key, record }))
+    .at(0) ?? null;
 }
 
 export function buildProgressAssetTargetBars({
@@ -300,6 +323,10 @@ export function buildProgressChartData({
 
 function addProgressMonths(date: Date, months: number) {
   return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
+function getProgressMonthSortValue(date: Date) {
+  return date.getFullYear() * 12 + date.getMonth();
 }
 
 function formatProgressChartMonthLabel(date: Date) {
