@@ -43,6 +43,7 @@ export type ExpenseMonth = {
 };
 
 type SavedExpensesByMonth = {
+  incomes?: Record<string, number>;
   months: Record<string, ExpenseCategory[]>;
 };
 
@@ -74,7 +75,7 @@ const defaultCategories: ExpenseCategory[] = [
 
 export function ExpensesPage({
   initialTrendVisible = false,
-  monthlyIncome = DEFAULT_MONTHLY_INCOME,
+  monthlyIncome: dashboardMonthlyIncome = DEFAULT_MONTHLY_INCOME,
   onTrendVisibilityChange,
 }: {
   initialTrendVisible?: boolean;
@@ -83,7 +84,9 @@ export function ExpensesPage({
 }) {
   const [expenseMonth, setExpenseMonth] = useState(getCurrentExpenseMonth);
   const shouldSkipNextSave = useRef(false);
+  const shouldSkipNextIncomeSave = useRef(false);
   const [categories, setCategories] = useState<ExpenseCategory[]>(() => readSavedExpenses(expenseMonth.key));
+  const [monthlyIncome, setMonthlyIncome] = useState(() => readSavedMonthlyIncome(expenseMonth.key, dashboardMonthlyIncome));
   const [draftCategory, setDraftCategory] = useState<{ name: string; value: number } | null>(null);
   const [isTrendVisible, setIsTrendVisible] = useState(initialTrendVisible);
   const totalExpenses = useMemo(() => categories.reduce((sum, category) => sum + category.value, 0), [categories]);
@@ -96,9 +99,13 @@ export function ExpensesPage({
   const topDrivers = [...categories].sort((first, second) => second.value - first.value).slice(0, 3);
   const previousMonth = useMemo(() => getPreviousExpenseMonth(expenseMonth), [expenseMonth]);
   const previousCategories = useMemo(() => readSavedExpenses(previousMonth.key), [previousMonth.key]);
+  const previousMonthlyIncome = useMemo(
+    () => readSavedMonthlyIncome(previousMonth.key, dashboardMonthlyIncome),
+    [dashboardMonthlyIncome, previousMonth.key],
+  );
   const previousMetrics = useMemo(
-    () => calculateExpenseMetrics(previousCategories, monthlyIncome),
-    [monthlyIncome, previousCategories],
+    () => calculateExpenseMetrics(previousCategories, previousMonthlyIncome),
+    [previousCategories, previousMonthlyIncome],
   );
   const totalExpensesTrend = buildMetricTrend(totalExpenses, previousMetrics.totalExpenses, 'lower');
   const essentialExpensesTrend = buildMetricTrend(essentialExpenses, previousMetrics.essentialExpenses, 'lower');
@@ -113,6 +120,15 @@ export function ExpensesPage({
 
     saveExpenses(expenseMonth.key, categories);
   }, [categories, expenseMonth.key]);
+
+  useEffect(() => {
+    if (shouldSkipNextIncomeSave.current) {
+      shouldSkipNextIncomeSave.current = false;
+      return;
+    }
+
+    saveMonthlyIncome(expenseMonth.key, monthlyIncome);
+  }, [expenseMonth.key, monthlyIncome]);
 
   useEffect(() => {
     setIsTrendVisible(initialTrendVisible);
@@ -136,14 +152,17 @@ export function ExpensesPage({
   function resetCurrentMonth() {
     deleteSavedExpensesMonth(expenseMonth.key);
     shouldSkipNextSave.current = true;
+    shouldSkipNextIncomeSave.current = true;
     setDraftCategory(null);
     setCategories(defaultCategories);
+    setMonthlyIncome(dashboardMonthlyIncome);
   }
 
   function selectExpenseMonth(nextMonth: ExpenseMonth) {
     setExpenseMonth(nextMonth);
     setDraftCategory(null);
     setCategories(readSavedExpenses(nextMonth.key));
+    setMonthlyIncome(readSavedMonthlyIncome(nextMonth.key, dashboardMonthlyIncome));
   }
 
   function addCategory() {
@@ -299,7 +318,12 @@ export function ExpensesPage({
           </div>
 
           <div className="mt-3 grid items-stretch gap-3 xl:grid-cols-3">
-            <IncomeVsExpenses monthlyIncome={monthlyIncome} totalExpenses={totalExpenses} savingsPotential={savingsPotential} />
+            <IncomeVsExpenses
+              monthlyIncome={monthlyIncome}
+              savingsPotential={savingsPotential}
+              totalExpenses={totalExpenses}
+              onMonthlyIncomeChange={(value) => setMonthlyIncome(Math.max(0, value))}
+            />
             <TopCostDrivers drivers={topDrivers} totalExpenses={totalExpenses} />
             <ExpenseInsights categories={categories} totalExpenses={totalExpenses} savingsPotential={savingsPotential} monthlyIncome={monthlyIncome} />
           </div>
@@ -665,12 +689,14 @@ function AddCategoryRow({
 
 function IncomeVsExpenses({
   monthlyIncome,
-  totalExpenses,
+  onMonthlyIncomeChange,
   savingsPotential,
+  totalExpenses,
 }: {
   monthlyIncome: number;
-  totalExpenses: number;
+  onMonthlyIncomeChange: (value: number) => void;
   savingsPotential: number;
+  totalExpenses: number;
 }) {
   const savingsRate = getPercent(savingsPotential, monthlyIncome);
 
@@ -678,7 +704,13 @@ function IncomeVsExpenses({
     <section className="glass-panel flex h-full flex-col p-4">
       <h2 className="text-sm font-bold text-slate-950">Income vs Expenses</h2>
       <div className="mt-5 flex flex-1 flex-col justify-evenly gap-4">
-        <ProgressRow color="bg-blue-500/75" label="Monthly Income" max={monthlyIncome} value={monthlyIncome} />
+        <ProgressRow
+          color="bg-blue-500/75"
+          label="Monthly Income"
+          max={monthlyIncome}
+          value={monthlyIncome}
+          onChange={onMonthlyIncomeChange}
+        />
         <ProgressRow color="bg-rose-500/70" label="Total Expenses" max={monthlyIncome} value={totalExpenses} />
         <ProgressRow color="bg-emerald-500/70" label="Remaining" max={monthlyIncome} value={savingsPotential} />
       </div>
@@ -697,18 +729,48 @@ function IncomeVsExpenses({
   );
 }
 
-function ProgressRow({ color, label, max, value }: { color: string; label: string; max: number; value: number }) {
+function ProgressRow({
+  color,
+  label,
+  max,
+  onChange,
+  value,
+}: {
+  color: string;
+  label: string;
+  max: number;
+  onChange?: (value: number) => void;
+  value: number;
+}) {
   const width = `${Math.min(100, getPercent(value, max))}%`;
+  const { inputValue, onInputChange } = useEditableNumber(value, onChange ?? (() => undefined), { format: 'money' });
 
   return (
-    <div className="grid grid-cols-[1fr_5.5rem] items-center gap-3 text-sm">
+    <div className="grid grid-cols-[1fr_7.5rem] items-center gap-3 text-sm">
       <div>
         <p className="text-slate-700">{label}</p>
         <div className="mt-2 h-1.5 rounded-full bg-slate-300/40">
           <div className={`h-1.5 rounded-full ${color}`} style={{ width }} />
         </div>
       </div>
-      <p className="text-right font-bold text-slate-950">{currency(value)} CHF</p>
+      {onChange ? (
+        <label className="glass-input h-8 justify-end px-2 py-1 text-right text-slate-950">
+          <input
+            aria-label={`${label} amount`}
+            className="w-full min-w-0 bg-transparent text-right outline-none"
+            inputMode="numeric"
+            type="text"
+            value={inputValue}
+            onChange={(event) => onInputChange(event.currentTarget.value)}
+          />
+          <span className="text-sm text-slate-600">CHF</span>
+        </label>
+      ) : (
+        <span className="glass-input h-8 justify-end px-2 py-1 text-right text-slate-950">
+          <span className="min-w-0 truncate">{currency(value)}</span>
+          <span className="text-sm text-slate-600">CHF</span>
+        </span>
+      )}
     </div>
   );
 }
@@ -828,6 +890,18 @@ function readSavedExpenses(monthKey: string) {
   }
 }
 
+function readSavedMonthlyIncome(monthKey: string, fallbackIncome: number) {
+  try {
+    const savedValue = window.localStorage.getItem(EXPENSES_STORAGE_KEY);
+    const savedExpenses = savedValue ? JSON.parse(savedValue) : undefined;
+    const savedIncome = getSavedIncomeForMonth(savedExpenses, monthKey);
+
+    return getSavedExpenseNumber(savedIncome, fallbackIncome);
+  } catch {
+    return fallbackIncome;
+  }
+}
+
 function mergeSavedExpenseCategories(savedCategories: unknown[]) {
   try {
     const defaultCategoryIds = new Set(defaultCategories.map(({ id }) => id));
@@ -863,6 +937,22 @@ function saveExpenses(monthKey: string, categories: ExpenseCategory[]) {
   }
 }
 
+function saveMonthlyIncome(monthKey: string, monthlyIncome: number) {
+  try {
+    const savedValue = window.localStorage.getItem(EXPENSES_STORAGE_KEY);
+    const savedExpenses = savedValue ? JSON.parse(savedValue) : undefined;
+    const expensesByMonth = normalizeSavedExpenses(savedExpenses, monthKey);
+
+    expensesByMonth.incomes = {
+      ...expensesByMonth.incomes,
+      [monthKey]: Math.max(0, monthlyIncome),
+    };
+    window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expensesByMonth));
+  } catch {
+    // Ignore storage failures so editing remains available in restricted browser modes.
+  }
+}
+
 function deleteSavedExpensesMonth(monthKey: string) {
   try {
     const savedValue = window.localStorage.getItem(EXPENSES_STORAGE_KEY);
@@ -870,6 +960,7 @@ function deleteSavedExpensesMonth(monthKey: string) {
     const expensesByMonth = normalizeSavedExpenses(savedExpenses, monthKey);
 
     delete expensesByMonth.months[monthKey];
+    delete expensesByMonth.incomes?.[monthKey];
     window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expensesByMonth));
   } catch {
     // Ignore storage failures; the visible page state still resets to defaults.
@@ -888,6 +979,14 @@ function getSavedCategoriesForMonth(savedExpenses: unknown, monthKey: string) {
   return undefined;
 }
 
+function getSavedIncomeForMonth(savedExpenses: unknown, monthKey: string) {
+  if (isSavedExpensesByMonth(savedExpenses)) {
+    return savedExpenses.incomes?.[monthKey];
+  }
+
+  return undefined;
+}
+
 function normalizeSavedExpenses(savedExpenses: unknown, monthKey: string): SavedExpensesByMonth {
   if (isSavedExpensesByMonth(savedExpenses)) {
     return savedExpenses;
@@ -895,13 +994,14 @@ function normalizeSavedExpenses(savedExpenses: unknown, monthKey: string): Saved
 
   if (Array.isArray(savedExpenses)) {
     return {
+      incomes: {},
       months: {
         [monthKey]: mergeSavedExpenseCategories(savedExpenses),
       },
     };
   }
 
-  return { months: {} };
+  return { incomes: {}, months: {} };
 }
 
 function isSavedExpensesByMonth(value: unknown): value is SavedExpensesByMonth {
@@ -911,7 +1011,12 @@ function isSavedExpensesByMonth(value: unknown): value is SavedExpensesByMonth {
 
   const savedExpenses = value as Partial<SavedExpensesByMonth>;
 
-  return Boolean(savedExpenses.months) && typeof savedExpenses.months === 'object' && !Array.isArray(savedExpenses.months);
+  return (
+    Boolean(savedExpenses.months) &&
+    typeof savedExpenses.months === 'object' &&
+    !Array.isArray(savedExpenses.months) &&
+    (!savedExpenses.incomes || (typeof savedExpenses.incomes === 'object' && !Array.isArray(savedExpenses.incomes)))
+  );
 }
 
 function isSavedExpenseCategory(value: unknown): value is ExpenseCategory {
@@ -939,6 +1044,10 @@ function isSavedExpenseValue(value: unknown): value is Pick<ExpenseCategory, 'id
   const category = value as Partial<ExpenseCategory>;
 
   return typeof category.id === 'string' && typeof category.value === 'number' && Number.isFinite(category.value);
+}
+
+function getSavedExpenseNumber(value: unknown, fallback: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback;
 }
 
 function buildCategoryId(label: string) {
