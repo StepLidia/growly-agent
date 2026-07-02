@@ -61,7 +61,7 @@ type ShareCategorySummary = CategoryTrendSummary & {
 };
 
 const OTHERS_CATEGORY_COLOR = '#94a3b8';
-const CASH_FLOW_COLOR = '#10b981';
+const CASH_FLOW_COLOR = '#11802d';
 
 export function ExpenseTrendAnalysisPage({
   currentCategories,
