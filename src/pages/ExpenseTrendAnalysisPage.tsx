@@ -24,9 +24,11 @@ import type { ExpenseCategory, ExpenseMonth } from '../pages/ExpensesPage';
 
 type ExpenseTrendAnalysisPageProps = {
   currentCategories: ExpenseCategory[];
+  currentMonthlyIncome: number;
   expenseMonth: ExpenseMonth;
   initialMonthsBack: number;
   readExpenses: (monthKey: string) => ExpenseCategory[];
+  readMonthlyIncome: (monthKey: string) => number;
 };
 
 type MetricTrend = {
@@ -38,6 +40,9 @@ type MetricTrend = {
 type ExpenseTrendMonth = {
   month: ExpenseMonth;
   categories: ExpenseCategory[];
+  monthlyCashFlow: number;
+  monthlyIncome: number;
+  savingsRate: number;
   totalExpenses: number;
   averageDailyExpense: number;
   monthChangeAmount: number | null;
@@ -56,24 +61,27 @@ type ShareCategorySummary = CategoryTrendSummary & {
 };
 
 const OTHERS_CATEGORY_COLOR = '#94a3b8';
+const CASH_FLOW_COLOR = '#10b981';
 
 export function ExpenseTrendAnalysisPage({
   currentCategories,
+  currentMonthlyIncome,
   expenseMonth,
   initialMonthsBack,
   readExpenses,
+  readMonthlyIncome,
 }: ExpenseTrendAnalysisPageProps) {
   const gradientPrefix = useId().replaceAll(':', '');
   const [monthsBack, setMonthsBack] = useState(initialMonthsBack);
   const [isShowingOtherCategories, setIsShowingOtherCategories] = useState(false);
   const analyzedMonthCount = monthsBack + 1;
   const trendMonths = useMemo(
-    () => buildExpenseTrendMonths(expenseMonth, analyzedMonthCount, readExpenses, currentCategories),
-    [analyzedMonthCount, currentCategories, expenseMonth, readExpenses],
+    () => buildExpenseTrendMonths(expenseMonth, analyzedMonthCount, readExpenses, readMonthlyIncome, currentCategories, currentMonthlyIncome),
+    [analyzedMonthCount, currentCategories, currentMonthlyIncome, expenseMonth, readExpenses, readMonthlyIncome],
   );
   const previousTrendMonths = useMemo(
-    () => buildExpenseTrendMonths(getPreviousExpenseMonth(trendMonths[0].month), analyzedMonthCount, readExpenses),
-    [analyzedMonthCount, readExpenses, trendMonths],
+    () => buildExpenseTrendMonths(getPreviousExpenseMonth(trendMonths[0].month), analyzedMonthCount, readExpenses, readMonthlyIncome),
+    [analyzedMonthCount, readExpenses, readMonthlyIncome, trendMonths],
   );
   const totalExpenses = trendMonths.reduce((sum, month) => sum + month.totalExpenses, 0);
   const averageMonthlyExpenses = totalExpenses / Math.max(trendMonths.length, 1);
@@ -98,21 +106,20 @@ export function ExpenseTrendAnalysisPage({
   const averageTrend = buildMetricTrend(averageMonthlyExpenses, previousAverage, 'lower');
   const expenseAxisTicks = buildThousandsTicks(trendMonths.map((month) => month.totalExpenses));
   const dailyAxisTicks = buildDailyExpenseTicks(trendMonths.map((month) => month.averageDailyExpense));
+  const cashFlowAxisTicks = buildCashFlowTicks(trendMonths.map((month) => month.monthlyCashFlow));
+  const savingsRateAxisTicks = buildSavingsRateTicks(trendMonths.map((month) => month.savingsRate));
   const monthChangeDomain = buildMonthChangeDomain(trendMonths.map((month) => month.monthChangeAmount ?? 0));
   const categoryStackAxisTicks = buildRoundedThousandsTicks(
     trendMonths.map((month) =>
       displayedCategorySpendSummaries.reduce((sum, category) => sum + getShareCategoryValue(month.categories, category), 0),
     ),
   );
-  const categoryAxisTicks = buildPaddedValueTicks(
-    trendMonths.flatMap((month) =>
-      categorySummaries.map((category) => month.categories.find((monthCategory) => monthCategory.id === category.id)?.value ?? 0),
-    ),
-  );
   const chartData = trendMonths.map((month) => ({
     name: month.month.shortLabel,
     averageDailyExpense: Math.round(month.averageDailyExpense),
+    monthlyCashFlow: month.monthlyCashFlow,
     monthChange: month.monthChangeAmount ?? 0,
+    savingsRate: month.savingsRate,
     totalExpenses: month.totalExpenses,
     ...Object.fromEntries(
       shareCategorySummaries.map((category) => [
@@ -256,12 +263,32 @@ export function ExpenseTrendAnalysisPage({
           </ResponsiveContainer>
         </TrendPanel>
 
-        <TrendPanel title="Top Categories Over Time">
-          <ChartLegend items={categorySummaries.map((category) => ({ label: category.label, color: category.color, line: true }))} />
+        <TrendPanel title="Monthly Cash Flow">
+          <ChartLegend
+            items={[
+              { label: 'Income - Expenses (CHF)', color: CASH_FLOW_COLOR },
+              { label: 'Savings Rate (%)', color: CASH_FLOW_COLOR, line: true },
+            ]}
+          />
           <ResponsiveContainer width="100%" height={260}>
             <ComposedChart data={chartData} margin={{ left: -10, right: 12, top: 12 }}>
+              <defs>
+                <linearGradient id={`${gradientPrefix}-monthly-cash-flow`} x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor={CASH_FLOW_COLOR} stopOpacity={0.82} />
+                  <stop offset="100%" stopColor={CASH_FLOW_COLOR} stopOpacity={0.18} />
+                </linearGradient>
+              </defs>
               <CartesianGrid horizontal stroke="#cbd5e1" strokeDasharray="3 3" strokeOpacity={0.6} vertical={false} />
-              <ReferenceLine stroke="#94a3b8" strokeOpacity={0.38} y={0} />
+              {cashFlowAxisTicks.slice(1).map((tick) => (
+                <ReferenceLine
+                  key={tick}
+                  stroke="#94a3b8"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.34}
+                  y={tick}
+                  yAxisId="cashFlow"
+                />
+              ))}
               <XAxis
                 axisLine={{ stroke: '#cbd5e1', strokeOpacity: 0.65 }}
                 dataKey="name"
@@ -270,23 +297,50 @@ export function ExpenseTrendAnalysisPage({
               />
               <YAxis
                 axisLine={{ stroke: '#cbd5e1', strokeOpacity: 0.65 }}
+                domain={[cashFlowAxisTicks[0], cashFlowAxisTicks.at(-1) ?? cashFlowAxisTicks[0]]}
                 tick={{ fill: '#334155', fontSize: 12 }}
-                tickFormatter={formatThousandsAxis}
+                tickFormatter={formatSignedThousandsAxis}
                 tickLine={false}
-                ticks={categoryAxisTicks}
-                width={46}
+                ticks={cashFlowAxisTicks}
+                width={54}
+                yAxisId="cashFlow"
               />
-              <Tooltip content={<TrendTooltip />} cursor={{ fill: 'rgba(37,99,235,.08)' }} />
-              {categorySummaries.map((category) => (
-                <Line
-                  key={category.id}
-                  dataKey={category.id}
-                  dot={{ fill: category.color, r: 4, stroke: category.color, strokeWidth: 1 }}
-                  name={category.label}
-                  stroke={category.color}
-                  strokeWidth={2}
+              <YAxis
+                axisLine={{ stroke: '#cbd5e1', strokeOpacity: 0.65 }}
+                domain={[savingsRateAxisTicks[0], savingsRateAxisTicks.at(-1) ?? savingsRateAxisTicks[0]]}
+                orientation="right"
+                tick={{ fill: '#334155', fontSize: 12 }}
+                tickFormatter={(value) => `${value}%`}
+                tickLine={false}
+                ticks={savingsRateAxisTicks}
+                width={38}
+                yAxisId="savingsRate"
+              />
+              <Tooltip content={<TrendTooltip />} cursor={{ fill: 'rgba(132,204,22,.08)' }} />
+              <Bar
+                dataKey="monthlyCashFlow"
+                fill={`url(#${gradientPrefix}-monthly-cash-flow)`}
+                name="Monthly Cash Flow"
+                radius={[6, 6, 0, 0]}
+                yAxisId="cashFlow"
+              >
+                <LabelList
+                  dataKey="monthlyCashFlow"
+                  fill="#0f172a"
+                  fontSize={12}
+                  fontWeight={700}
+                  formatter={(value) => formatSignedCurrency(Number(value ?? 0))}
+                  position="top"
                 />
-              ))}
+              </Bar>
+              <Line
+                dataKey="savingsRate"
+                dot={{ fill: '#d9f99d', r: 4, stroke: CASH_FLOW_COLOR, strokeWidth: 2 }}
+                name="Savings Rate"
+                stroke={CASH_FLOW_COLOR}
+                strokeWidth={2}
+                yAxisId="savingsRate"
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </TrendPanel>
@@ -633,6 +687,14 @@ function formatTooltipValue(name: string | undefined, value: number, dataKey: st
     return formatSignedCurrency(value);
   }
 
+  if (dataKey === 'monthlyCashFlow') {
+    return `${formatSignedCurrency(value)} CHF`;
+  }
+
+  if (dataKey === 'savingsRate') {
+    return formatPercent(value, 100);
+  }
+
   if (String(dataKey).endsWith('Share')) {
     return formatPercent(value, 100);
   }
@@ -736,7 +798,9 @@ function buildExpenseTrendMonths(
   endMonth: ExpenseMonth,
   monthCount: number,
   readExpenses: (monthKey: string) => ExpenseCategory[],
+  readMonthlyIncome: (monthKey: string) => number,
   currentCategories?: ExpenseCategory[],
+  currentMonthlyIncome?: number,
 ): ExpenseTrendMonth[] {
   const [endYear, endMonthNumber] = endMonth.key.split('-').map(Number);
   const months = Array.from({ length: monthCount }, (_, index) =>
@@ -745,7 +809,10 @@ function buildExpenseTrendMonths(
 
   return months.map((month, index) => {
     const categories = month.key === endMonth.key && currentCategories ? currentCategories : readExpenses(month.key);
+    const monthlyIncome =
+      month.key === endMonth.key && typeof currentMonthlyIncome === 'number' ? currentMonthlyIncome : readMonthlyIncome(month.key);
     const totalExpenses = getCategoryTotal(categories);
+    const monthlyCashFlow = monthlyIncome - totalExpenses;
     const previousMonth = index === 0 ? getPreviousExpenseMonth(month) : months[index - 1];
     const previousCategories =
       previousMonth.key === endMonth.key && currentCategories ? currentCategories : readExpenses(previousMonth.key);
@@ -756,6 +823,9 @@ function buildExpenseTrendMonths(
     return {
       month,
       categories,
+      monthlyCashFlow,
+      monthlyIncome,
+      savingsRate: getPercent(monthlyCashFlow, monthlyIncome),
       totalExpenses,
       averageDailyExpense: totalExpenses / getDaysInExpenseMonth(month),
       monthChangeAmount,
@@ -955,9 +1025,33 @@ function buildDailyExpenseTicks(values: number[]) {
   return Array.from({ length: 5 }, (_, index) => index * step);
 }
 
-function buildPaddedValueTicks(values: number[]) {
+function buildCashFlowTicks(values: number[]) {
+  const minValue = Math.min(...values, 0);
   const maxValue = Math.max(...values, 0);
-  const axisMax = Math.max(1000, Math.ceil((maxValue * 1.25) / 500) * 500);
+  const maxAbsValue = Math.max(Math.abs(minValue), Math.abs(maxValue), 1000);
+
+  if (minValue < 0) {
+    const axisLimit = Math.ceil(maxAbsValue / 1000) * 1000;
+
+    return Array.from({ length: axisLimit / 500 + 1 }, (_, index) => -axisLimit + index * 500);
+  }
+
+  const axisMax = Math.max(1000, Math.ceil(maxValue / 1000) * 1000);
+
+  return Array.from({ length: axisMax / 1000 + 1 }, (_, index) => index * 1000);
+}
+
+function buildSavingsRateTicks(values: number[]) {
+  const minValue = Math.min(...values, 0);
+  const maxValue = Math.max(...values, 0);
+
+  if (minValue < 0) {
+    const axisLimit = Math.max(75, Math.ceil(Math.max(Math.abs(minValue), Math.abs(maxValue)) * 1.75 / 25) * 25);
+
+    return [-axisLimit, -axisLimit / 2, 0, axisLimit / 2, axisLimit];
+  }
+
+  const axisMax = Math.max(75, Math.ceil((maxValue * 1.75) / 25) * 25);
   const step = axisMax / 4;
 
   return Array.from({ length: 5 }, (_, index) => index * step);

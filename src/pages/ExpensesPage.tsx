@@ -205,9 +205,11 @@ export function ExpensesPage({
       {isTrendVisible && (
         <ExpenseTrendAnalysisPage
           currentCategories={categories}
+          currentMonthlyIncome={monthlyIncome}
           expenseMonth={expenseMonth}
           initialMonthsBack={DEFAULT_TREND_MONTHS_BACK}
           readExpenses={readSavedExpenses}
+          readMonthlyIncome={(monthKey) => readSavedMonthlyIncome(monthKey, dashboardMonthlyIncome)}
         />
       )}
       {!isTrendVisible && (
