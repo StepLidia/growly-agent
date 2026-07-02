@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ChartLine, TrendingUp, Wallet, WalletCards, type LucideIcon } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, ChartLine, TrendingUp, Wallet, WalletCards, type LucideIcon } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -17,6 +17,7 @@ import {
   YAxis,
 } from 'recharts';
 import { formatPercent, getPercent } from '../calculations/percent';
+import { buttonClasses } from '../constants/buttonStyles';
 import { tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 import type { ExpenseCategory, ExpenseMonth } from '../pages/ExpensesPage';
@@ -64,6 +65,7 @@ export function ExpenseTrendAnalysisPage({
 }: ExpenseTrendAnalysisPageProps) {
   const gradientPrefix = useId().replaceAll(':', '');
   const [monthsBack, setMonthsBack] = useState(initialMonthsBack);
+  const [isShowingOtherCategories, setIsShowingOtherCategories] = useState(false);
   const analyzedMonthCount = monthsBack + 1;
   const trendMonths = useMemo(
     () => buildExpenseTrendMonths(expenseMonth, analyzedMonthCount, readExpenses, currentCategories),
@@ -81,8 +83,11 @@ export function ExpenseTrendAnalysisPage({
   const lowestMonth = trendMonths.reduce((lowest, month) => (month.totalExpenses < lowest.totalExpenses ? month : lowest), trendMonths[0]);
   const categorySummaries = getTopCategorySummaries(trendMonths, 5);
   const shareCategorySummaries = getShareCategorySummaries(trendMonths, categorySummaries);
+  const otherCategorySummaries = getOtherCategorySummaries(trendMonths, categorySummaries);
+  const isShowingOtherCategoryBreakdown = isShowingOtherCategories && otherCategorySummaries.length > 0;
+  const displayedCategorySpendSummaries = isShowingOtherCategoryBreakdown ? otherCategorySummaries : shareCategorySummaries;
   const shareTooltipColors = Object.fromEntries(
-    shareCategorySummaries.flatMap((category) => [
+    [...shareCategorySummaries, ...otherCategorySummaries].flatMap((category) => [
       [`${category.id}Share`, category.color],
       [`${category.id}Amount`, category.color],
       [category.label, category.color],
@@ -94,7 +99,11 @@ export function ExpenseTrendAnalysisPage({
   const expenseAxisTicks = buildThousandsTicks(trendMonths.map((month) => month.totalExpenses));
   const dailyAxisTicks = buildDailyExpenseTicks(trendMonths.map((month) => month.averageDailyExpense));
   const monthChangeDomain = buildMonthChangeDomain(trendMonths.map((month) => month.monthChangeAmount ?? 0));
-  const categoryStackAxisTicks = buildRoundedThousandsTicks(trendMonths.map((month) => month.totalExpenses));
+  const categoryStackAxisTicks = buildRoundedThousandsTicks(
+    trendMonths.map((month) =>
+      displayedCategorySpendSummaries.reduce((sum, category) => sum + getShareCategoryValue(month.categories, category), 0),
+    ),
+  );
   const categoryAxisTicks = buildPaddedValueTicks(
     trendMonths.flatMap((month) =>
       categorySummaries.map((category) => month.categories.find((monthCategory) => monthCategory.id === category.id)?.value ?? 0),
@@ -112,7 +121,7 @@ export function ExpenseTrendAnalysisPage({
       ]),
     ),
     ...Object.fromEntries(
-      shareCategorySummaries.map((category) => [
+      [...shareCategorySummaries, ...otherCategorySummaries].map((category) => [
         `${category.id}Amount`,
         getShareCategoryValue(month.categories, category),
       ]),
@@ -332,11 +341,25 @@ export function ExpenseTrendAnalysisPage({
           </ResponsiveContainer>
         </TrendPanel>
 
-        <TrendPanel title="Category Spend Over Time (CHF)">
+        <TrendPanel
+          title={isShowingOtherCategoryBreakdown ? 'Other Categories Over Time (CHF)' : 'Category Spend Over Time (CHF)'}
+          action={
+            isShowingOtherCategoryBreakdown ? (
+              <button
+                className={buttonClasses({ size: 'icon' })}
+                aria-label="Back to category spend"
+                type="button"
+                onClick={() => setIsShowingOtherCategories(false)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            ) : null
+          }
+        >
           <ResponsiveContainer width="100%" height={230}>
             <BarChart data={chartData} margin={{ left: 4, right: 12, top: 12 }} barCategoryGap="24%">
               <defs>
-                {shareCategorySummaries.map((category) => (
+                {displayedCategorySpendSummaries.map((category) => (
                   <linearGradient key={category.id} id={`${gradientPrefix}-${category.id}-share`} x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stopColor={category.color} stopOpacity={0.82} />
                     <stop offset="70%" stopColor={category.color} stopOpacity={0.82} />
@@ -360,7 +383,7 @@ export function ExpenseTrendAnalysisPage({
                 width={48}
               />
               <Tooltip content={<TrendTooltip colorByTooltipKey={shareTooltipColors} />} cursor={{ fill: 'rgba(37,99,235,.08)' }} />
-              {shareCategorySummaries.map((category) => (
+              {displayedCategorySpendSummaries.map((category) => (
                 <Bar
                   key={category.id}
                   dataKey={`${category.id}Amount`}
@@ -368,6 +391,12 @@ export function ExpenseTrendAnalysisPage({
                   name={category.label}
                   stackId="share"
                   barSize={26}
+                  className={category.id === 'others' && !isShowingOtherCategoryBreakdown ? 'cursor-pointer' : undefined}
+                  onClick={() => {
+                    if (category.id === 'others' && !isShowingOtherCategoryBreakdown) {
+                      setIsShowingOtherCategories(true);
+                    }
+                  }}
                 />
               ))}
             </BarChart>
@@ -530,10 +559,13 @@ function TrendMonthsSlider({ value, onChange }: { value: number; onChange: (valu
   );
 }
 
-function TrendPanel({ children, title }: { children: ReactNode; title: string }) {
+function TrendPanel({ action, children, title }: { action?: ReactNode; children: ReactNode; title: string }) {
   return (
     <section className="glass-panel min-w-0 p-4">
-      <h2 className="text-sm font-bold text-slate-950">{title}</h2>
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="text-sm font-bold text-slate-950">{title}</h2>
+        {action}
+      </div>
       <div className="mt-3">{children}</div>
     </section>
   );
@@ -784,6 +816,34 @@ function getShareCategorySummaries(
   }
 
   return shareCategories;
+}
+
+function getOtherCategorySummaries(
+  trendMonths: ExpenseTrendMonth[],
+  topCategorySummaries: CategoryTrendSummary[],
+): ShareCategorySummary[] {
+  const topCategoryIds = new Set(topCategorySummaries.map((category) => category.id));
+  const otherCategoryTotals = new Map<string, ShareCategorySummary>();
+
+  for (const month of trendMonths) {
+    for (const category of month.categories) {
+      if (topCategoryIds.has(category.id)) {
+        continue;
+      }
+
+      const existingCategory = otherCategoryTotals.get(category.id);
+
+      otherCategoryTotals.set(category.id, {
+        id: category.id,
+        label: category.label,
+        color: category.color,
+        total: (existingCategory?.total ?? 0) + category.value,
+        sourceIds: [category.id],
+      });
+    }
+  }
+
+  return [...otherCategoryTotals.values()].sort((first, second) => second.total - first.total);
 }
 
 function getShareCategoryValue(categories: ExpenseCategory[], shareCategory: ShareCategorySummary) {
