@@ -396,6 +396,7 @@ export function ExpenseTrendAnalysisPage({
         </TrendPanel>
 
         <TrendPanel
+          className="z-50"
           title={isShowingOtherCategoryBreakdown ? 'Other Categories Over Time (CHF)' : 'Category Spend Over Time (CHF)'}
           action={
             isShowingOtherCategoryBreakdown ? (
@@ -436,7 +437,12 @@ export function ExpenseTrendAnalysisPage({
                 ticks={categoryStackAxisTicks}
                 width={48}
               />
-              <Tooltip content={<TrendTooltip colorByTooltipKey={shareTooltipColors} />} cursor={{ fill: 'rgba(37,99,235,.08)' }} />
+              <Tooltip
+                allowEscapeViewBox={{ x: true, y: true }}
+                content={<TrendTooltip colorByTooltipKey={shareTooltipColors} />}
+                cursor={{ fill: 'rgba(37,99,235,.08)' }}
+                wrapperStyle={{ outline: 'none', pointerEvents: 'none', zIndex: 100 }}
+              />
               {displayedCategorySpendSummaries.map((category) => (
                 <Bar
                   key={category.id}
@@ -613,9 +619,19 @@ function TrendMonthsSlider({ value, onChange }: { value: number; onChange: (valu
   );
 }
 
-function TrendPanel({ action, children, title }: { action?: ReactNode; children: ReactNode; title: string }) {
+function TrendPanel({
+  action,
+  children,
+  className = '',
+  title,
+}: {
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  title: string;
+}) {
   return (
-    <section className="glass-panel min-w-0 p-4">
+    <section className={`glass-panel min-w-0 p-4 ${className}`}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-sm font-bold text-slate-950">{title}</h2>
         {action}
@@ -660,10 +676,19 @@ function TrendTooltip({
     return null;
   }
 
+  const visiblePayload = payload.filter((item) => {
+    const dataKey = String(item.dataKey ?? '');
+
+    return !dataKey.endsWith('Amount') || Number(item.value ?? 0) > 0;
+  });
+  if (!visiblePayload.length) {
+    return null;
+  }
+
   return (
-    <div className={tooltipContentClasses('px-3 py-2')}>
+    <div className={tooltipContentClasses('max-w-64 px-3 py-2')}>
       {label && <p className="mb-1 font-semibold text-slate-950">{label}</p>}
-      {payload.map((item) => {
+      {visiblePayload.map((item) => {
         const dataKey = String(item.dataKey ?? '');
         const name = item.name ?? '';
         const labelColor =
@@ -1028,12 +1053,15 @@ function buildDailyExpenseTicks(values: number[]) {
 function buildCashFlowTicks(values: number[]) {
   const minValue = Math.min(...values, 0);
   const maxValue = Math.max(...values, 0);
-  const maxAbsValue = Math.max(Math.abs(minValue), Math.abs(maxValue), 1000);
 
   if (minValue < 0) {
-    const axisLimit = Math.ceil(maxAbsValue / 1000) * 1000;
+    const preliminaryMin = Math.floor(minValue / 1000) * 1000;
+    const preliminaryMax = Math.ceil(maxValue / 1000) * 1000 + 1000;
+    const step = Math.max(1000, Math.ceil((preliminaryMax - preliminaryMin) / 6 / 1000) * 1000);
+    const axisMin = Math.floor(preliminaryMin / step) * step;
+    const axisMax = Math.ceil(preliminaryMax / step) * step;
 
-    return Array.from({ length: axisLimit / 500 + 1 }, (_, index) => -axisLimit + index * 500);
+    return Array.from({ length: (axisMax - axisMin) / step + 1 }, (_, index) => axisMin + index * step);
   }
 
   const axisMax = Math.max(1000, Math.ceil(maxValue / 1000) * 1000 + 1000);
