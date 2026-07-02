@@ -1036,25 +1036,21 @@ function buildCashFlowTicks(values: number[]) {
     return Array.from({ length: axisLimit / 500 + 1 }, (_, index) => -axisLimit + index * 500);
   }
 
-  const axisMax = Math.max(1000, Math.ceil(maxValue / 1000) * 1000);
+  const axisMax = Math.max(1000, Math.ceil(maxValue / 1000) * 1000 + 1000);
 
   return Array.from({ length: axisMax / 1000 + 1 }, (_, index) => index * 1000);
 }
 
 function buildSavingsRateTicks(values: number[]) {
   const minValue = Math.min(...values, 0);
-  const maxValue = Math.max(...values, 0);
 
   if (minValue < 0) {
-    const axisLimit = Math.max(75, Math.ceil(Math.max(Math.abs(minValue), Math.abs(maxValue)) * 1.75 / 25) * 25);
+    const axisLimit = Math.max(100, Math.ceil(Math.abs(minValue) / 25) * 25);
 
-    return [-axisLimit, -axisLimit / 2, 0, axisLimit / 2, axisLimit];
+    return [-axisLimit, 0, 25, 50, 75, 100];
   }
 
-  const axisMax = Math.max(75, Math.ceil((maxValue * 1.75) / 25) * 25);
-  const step = axisMax / 4;
-
-  return Array.from({ length: 5 }, (_, index) => index * step);
+  return [0, 25, 50, 75, 100];
 }
 
 function buildMonthChangeDomain(values: number[]): [number, number] {
