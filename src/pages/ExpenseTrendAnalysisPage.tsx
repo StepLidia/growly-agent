@@ -84,6 +84,7 @@ export function ExpenseTrendAnalysisPage({
   const shareTooltipColors = Object.fromEntries(
     shareCategorySummaries.flatMap((category) => [
       [`${category.id}Share`, category.color],
+      [`${category.id}Amount`, category.color],
       [category.label, category.color],
     ]),
   );
@@ -93,6 +94,7 @@ export function ExpenseTrendAnalysisPage({
   const expenseAxisTicks = buildThousandsTicks(trendMonths.map((month) => month.totalExpenses));
   const dailyAxisTicks = buildDailyExpenseTicks(trendMonths.map((month) => month.averageDailyExpense));
   const monthChangeDomain = buildMonthChangeDomain(trendMonths.map((month) => month.monthChangeAmount ?? 0));
+  const categoryStackAxisTicks = buildRoundedThousandsTicks(trendMonths.map((month) => month.totalExpenses));
   const categoryAxisTicks = buildPaddedValueTicks(
     trendMonths.flatMap((month) =>
       categorySummaries.map((category) => month.categories.find((monthCategory) => monthCategory.id === category.id)?.value ?? 0),
@@ -107,6 +109,12 @@ export function ExpenseTrendAnalysisPage({
       shareCategorySummaries.map((category) => [
         `${category.id}Share`,
         getPercent(getShareCategoryValue(month.categories, category), month.totalExpenses),
+      ]),
+    ),
+    ...Object.fromEntries(
+      shareCategorySummaries.map((category) => [
+        `${category.id}Amount`,
+        getShareCategoryValue(month.categories, category),
       ]),
     ),
     ...Object.fromEntries(
@@ -324,7 +332,7 @@ export function ExpenseTrendAnalysisPage({
           </ResponsiveContainer>
         </TrendPanel>
 
-        <TrendPanel title="Category Share Over Time (%)">
+        <TrendPanel title="Category Spend Over Time (CHF)">
           <ResponsiveContainer width="100%" height={230}>
             <BarChart data={chartData} margin={{ left: 4, right: 12, top: 12 }} barCategoryGap="24%">
               <defs>
@@ -345,18 +353,17 @@ export function ExpenseTrendAnalysisPage({
               />
               <YAxis
                 axisLine={{ stroke: '#cbd5e1', strokeOpacity: 0.65 }}
-                domain={[0, 100]}
                 tick={{ fill: '#334155', fontSize: 12 }}
-                tickFormatter={(value) => `${value}%`}
+                tickFormatter={formatThousandsAxis}
                 tickLine={false}
-                ticks={[0, 25, 50, 75, 100]}
+                ticks={categoryStackAxisTicks}
                 width={48}
               />
               <Tooltip content={<TrendTooltip colorByTooltipKey={shareTooltipColors} />} cursor={{ fill: 'rgba(37,99,235,.08)' }} />
               {shareCategorySummaries.map((category) => (
                 <Bar
                   key={category.id}
-                  dataKey={`${category.id}Share`}
+                  dataKey={`${category.id}Amount`}
                   fill={`url(#${gradientPrefix}-${category.id}-share)`}
                   name={category.label}
                   stackId="share"
@@ -871,6 +878,13 @@ function buildThousandsTicks(values: number[]) {
   const step = Math.max(1000, Math.ceil(maxValue / 4 / 1000) * 1000);
 
   return Array.from({ length: 5 }, (_, index) => index * step);
+}
+
+function buildRoundedThousandsTicks(values: number[]) {
+  const maxValue = Math.max(...values, 0);
+  const axisMax = Math.max(1000, Math.ceil(maxValue / 1000) * 1000);
+
+  return Array.from({ length: axisMax / 1000 + 1 }, (_, index) => index * 1000);
 }
 
 function buildDailyExpenseTicks(values: number[]) {
