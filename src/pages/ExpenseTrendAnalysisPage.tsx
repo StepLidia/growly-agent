@@ -29,6 +29,7 @@ type ExpenseTrendAnalysisPageProps = {
   initialMonthsBack: number;
   readExpenses: (monthKey: string) => ExpenseCategory[];
   readMonthlyIncome: (monthKey: string) => number;
+  onMonthsBackChange?: (monthsBack: number) => void;
 };
 
 type MetricTrend = {
@@ -68,6 +69,7 @@ export function ExpenseTrendAnalysisPage({
   currentMonthlyIncome,
   expenseMonth,
   initialMonthsBack,
+  onMonthsBackChange,
   readExpenses,
   readMonthlyIncome,
 }: ExpenseTrendAnalysisPageProps) {
@@ -143,7 +145,13 @@ export function ExpenseTrendAnalysisPage({
 
   return (
     <section className="mt-5 space-y-3">
-      <TrendMonthsSlider value={monthsBack} onChange={setMonthsBack} />
+      <TrendMonthsSlider
+        value={monthsBack}
+        onChange={(value) => {
+          setMonthsBack(value);
+          onMonthsBackChange?.(value);
+        }}
+      />
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <TrendMetricCard
           icon={WalletCards}

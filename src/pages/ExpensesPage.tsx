@@ -45,6 +45,7 @@ export type ExpenseMonth = {
 type SavedExpensesByMonth = {
   incomes?: Record<string, number>;
   months: Record<string, ExpenseCategory[]>;
+  trendMonthsBack?: number;
 };
 
 type MetricCardProps = {
@@ -87,6 +88,7 @@ export function ExpensesPage({
   const shouldSkipNextIncomeSave = useRef(false);
   const [categories, setCategories] = useState<ExpenseCategory[]>(() => readSavedExpenses(expenseMonth.key));
   const [monthlyIncome, setMonthlyIncome] = useState(() => readSavedMonthlyIncome(expenseMonth.key, dashboardMonthlyIncome));
+  const [trendMonthsBack, setTrendMonthsBack] = useState(() => readSavedTrendMonthsBack(DEFAULT_TREND_MONTHS_BACK));
   const [draftCategory, setDraftCategory] = useState<{ name: string; value: number } | null>(null);
   const [isTrendVisible, setIsTrendVisible] = useState(initialTrendVisible);
   const totalExpenses = useMemo(() => categories.reduce((sum, category) => sum + category.value, 0), [categories]);
@@ -207,9 +209,13 @@ export function ExpensesPage({
           currentCategories={categories}
           currentMonthlyIncome={monthlyIncome}
           expenseMonth={expenseMonth}
-          initialMonthsBack={DEFAULT_TREND_MONTHS_BACK}
+          initialMonthsBack={trendMonthsBack}
           readExpenses={readSavedExpenses}
           readMonthlyIncome={(monthKey) => readSavedMonthlyIncome(monthKey, dashboardMonthlyIncome)}
+          onMonthsBackChange={(value) => {
+            setTrendMonthsBack(value);
+            saveTrendMonthsBack(value);
+          }}
         />
       )}
       {!isTrendVisible && (
@@ -904,6 +910,21 @@ function readSavedMonthlyIncome(monthKey: string, fallbackIncome: number) {
   }
 }
 
+function readSavedTrendMonthsBack(fallbackMonthsBack: number) {
+  try {
+    const savedValue = window.localStorage.getItem(EXPENSES_STORAGE_KEY);
+    const savedExpenses = savedValue ? JSON.parse(savedValue) : undefined;
+
+    if (!isSavedExpensesByMonth(savedExpenses)) {
+      return fallbackMonthsBack;
+    }
+
+    return getSavedTrendMonthsBack(savedExpenses.trendMonthsBack, fallbackMonthsBack);
+  } catch {
+    return fallbackMonthsBack;
+  }
+}
+
 function mergeSavedExpenseCategories(savedCategories: unknown[]) {
   try {
     const defaultCategoryIds = new Set(defaultCategories.map(({ id }) => id));
@@ -952,6 +973,19 @@ function saveMonthlyIncome(monthKey: string, monthlyIncome: number) {
     window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expensesByMonth));
   } catch {
     // Ignore storage failures so editing remains available in restricted browser modes.
+  }
+}
+
+function saveTrendMonthsBack(monthsBack: number) {
+  try {
+    const savedValue = window.localStorage.getItem(EXPENSES_STORAGE_KEY);
+    const savedExpenses = savedValue ? JSON.parse(savedValue) : undefined;
+    const expensesByMonth = normalizeSavedExpenses(savedExpenses, getCurrentExpenseMonth().key);
+
+    expensesByMonth.trendMonthsBack = getSavedTrendMonthsBack(monthsBack, DEFAULT_TREND_MONTHS_BACK);
+    window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expensesByMonth));
+  } catch {
+    // Ignore storage failures so trend controls remain usable in restricted browser modes.
   }
 }
 
@@ -1050,6 +1084,10 @@ function isSavedExpenseValue(value: unknown): value is Pick<ExpenseCategory, 'id
 
 function getSavedExpenseNumber(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback;
+}
+
+function getSavedTrendMonthsBack(value: unknown, fallback: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.min(12, Math.max(0, Math.round(value))) : fallback;
 }
 
 function buildCategoryId(label: string) {
