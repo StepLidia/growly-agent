@@ -1112,7 +1112,7 @@ function ProgressAssetTargetBarsCard({
               {bars.map((bar) => (
                 <Cell key={bar.id} fill={`url(#${getProgressAssetBarGradientId(bar.id)})`} />
               ))}
-              <LabelList content={(props) => renderProgressAssetBarPercentLabel(props, bars)} />
+              <LabelList content={renderProgressAssetBarPercentLabel} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -1131,20 +1131,18 @@ function getProgressAssetBarGradientId(assetId: string) {
 
 function renderProgressAssetBarPercentLabel({
   height,
-  index,
+  payload,
   width,
   x,
   y,
 }: {
   height?: number | string;
-  index?: number | string;
+  payload?: ReturnType<typeof buildProgressAssetTargetBars>[number];
   width?: number | string;
   x?: number | string;
   y?: number | string;
-}, bars: ReturnType<typeof buildProgressAssetTargetBars>) {
-  const bar = bars[Number(index)];
-
-  if (!bar) {
+}) {
+  if (!payload) {
     return null;
   }
 
@@ -1153,14 +1151,14 @@ function renderProgressAssetBarPercentLabel({
 
   return (
     <text
-      fill={getProgressAssetBarColor(bar.color)}
+      fill={getProgressAssetBarColor(payload.color)}
       fontSize={13}
       fontWeight={700}
       textAnchor="start"
       x={labelX}
       y={labelY}
     >
-      {Math.round(bar.progressPercent)}%
+      {Math.round(payload.progressPercent)}%
     </text>
   );
 }
