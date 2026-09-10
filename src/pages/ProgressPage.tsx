@@ -1052,6 +1052,7 @@ function ProgressAssetTargetBarsCard({
   projectionYears: number;
 }) {
   const bars = buildProgressAssetTargetBars({ assets, baselineBalances, projectionYears });
+  const visibleBars = bars.filter((bar) => bar.progressYears !== 0);
   const safeProjectionYears = Math.max(1, Math.round(projectionYears));
 
   return (
@@ -1112,7 +1113,10 @@ function ProgressAssetTargetBarsCard({
               {bars.map((bar) => (
                 <Cell key={bar.id} fill={`url(#${getProgressAssetBarGradientId(bar.id)})`} />
               ))}
-              <LabelList content={renderProgressAssetBarPercentLabel} />
+              <LabelList
+                content={(props) => renderProgressAssetBarPercentLabel(props, visibleBars)}
+                dataKey="progressPercent"
+              />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -1131,18 +1135,23 @@ function getProgressAssetBarGradientId(assetId: string) {
 
 function renderProgressAssetBarPercentLabel({
   height,
-  payload,
+  index,
+  value,
   width,
   x,
   y,
 }: {
   height?: number | string;
-  payload?: ReturnType<typeof buildProgressAssetTargetBars>[number];
+  index?: number;
+  value?: ReactNode;
   width?: number | string;
   x?: number | string;
   y?: number | string;
-}) {
-  if (!payload) {
+}, visibleBars: ReturnType<typeof buildProgressAssetTargetBars>) {
+  const bar = visibleBars[Number(index)];
+  const progressPercent = Number(value);
+
+  if (!bar || !Number.isFinite(progressPercent)) {
     return null;
   }
 
@@ -1151,14 +1160,14 @@ function renderProgressAssetBarPercentLabel({
 
   return (
     <text
-      fill={getProgressAssetBarColor(payload.color)}
+      fill={getProgressAssetBarColor(bar.color)}
       fontSize={13}
       fontWeight={700}
       textAnchor="start"
       x={labelX}
       y={labelY}
     >
-      {Math.round(payload.progressPercent)}%
+      {Math.round(progressPercent)}%
     </text>
   );
 }
