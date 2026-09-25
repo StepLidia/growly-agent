@@ -23,10 +23,12 @@ import { useEditableNumber } from '../hooks/useEditableNumber';
 import { ExpenseTrendAnalysisPage, type ExpenseTrendAggregationMode } from './ExpenseTrendAnalysisPage';
 import { InsightValue } from '../components/InsightValue';
 import { MonthPicker } from '../components/MonthPicker';
+import { YearPicker } from '../components/YearPicker';
 
 const EXPENSES_STORAGE_KEY = 'growly-expenses-v1';
 const DEFAULT_MONTHLY_INCOME = 6000;
 const DEFAULT_TREND_MONTHS_BACK = 5;
+const DEFAULT_TREND_YEARS_BACK = 5;
 
 export type ExpenseCategory = {
   id: string;
@@ -46,6 +48,7 @@ type SavedExpensesByMonth = {
   incomes?: Record<string, number>;
   months: Record<string, ExpenseCategory[]>;
   trendMonthsBack?: number;
+  trendYearsBack?: number;
 };
 
 type MetricCardProps = {
@@ -89,6 +92,7 @@ export function ExpensesPage({
   const [categories, setCategories] = useState<ExpenseCategory[]>(() => readSavedExpenses(expenseMonth.key));
   const [monthlyIncome, setMonthlyIncome] = useState(() => readSavedMonthlyIncome(expenseMonth.key, dashboardMonthlyIncome));
   const [trendMonthsBack, setTrendMonthsBack] = useState(() => readSavedTrendMonthsBack(DEFAULT_TREND_MONTHS_BACK));
+  const [trendYearsBack, setTrendYearsBack] = useState(() => readSavedTrendYearsBack(DEFAULT_TREND_YEARS_BACK));
   const [trendAggregationMode, setTrendAggregationMode] = useState<ExpenseTrendAggregationMode>('month');
   const [draftCategory, setDraftCategory] = useState<{ name: string; value: number } | null>(null);
   const [isTrendVisible, setIsTrendVisible] = useState(initialTrendVisible);
@@ -214,11 +218,16 @@ export function ExpensesPage({
           currentMonthlyIncome={monthlyIncome}
           expenseMonth={expenseMonth}
           initialMonthsBack={trendMonthsBack}
+          initialYearsBack={trendYearsBack}
           readExpenses={readSavedExpenses}
           readMonthlyIncome={(monthKey) => readSavedMonthlyIncome(monthKey, dashboardMonthlyIncome)}
           onMonthsBackChange={(value) => {
             setTrendMonthsBack(value);
             saveTrendMonthsBack(value);
+          }}
+          onYearsBackChange={(value) => {
+            setTrendYearsBack(value);
+            saveTrendYearsBack(value);
           }}
         />
       )}
@@ -363,6 +372,9 @@ function ExpensesHeader({
   onToggleTrend: () => void;
 }) {
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const isYearMode = isTrendVisible && aggregationMode === 'year';
+  const selectedYear = Number(expenseMonth.key.slice(0, 4));
+  const selectedMonthIndex = Number(expenseMonth.key.slice(5, 7)) - 1;
 
   return (
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -380,7 +392,9 @@ function ExpensesHeader({
                 <button
                   key={mode}
                   className={buttonClasses({
-                    className: isActive ? 'bg-blue-100/90 text-blue-700 shadow-inner' : '',
+                    className: isActive
+                      ? '!border-blue-500 !bg-blue-500 !text-white shadow-blue-600/20 hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white'
+                      : '',
                   })}
                   aria-pressed={isActive}
                   type="button"
@@ -395,16 +409,27 @@ function ExpensesHeader({
         <div className="relative">
           <button
             className={buttonClasses({ className: 'min-w-44 whitespace-nowrap' })}
-            aria-controls="expenses-month-picker"
+            aria-controls={isYearMode ? 'expenses-year-picker' : 'expenses-month-picker'}
             aria-expanded={isMonthPickerOpen}
             type="button"
             onClick={() => setIsMonthPickerOpen((isOpen) => !isOpen)}
           >
             <CalendarDays className="h-4 w-4 shrink-0" />
-            <span>{expenseMonth.label}</span>
+            <span>{isYearMode ? selectedYear : expenseMonth.label}</span>
             <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isMonthPickerOpen ? 'rotate-180' : ''}`} />
           </button>
-          {isMonthPickerOpen && (
+          {isMonthPickerOpen && isYearMode && (
+            <YearPicker
+              className="right-0 top-12"
+              id="expenses-year-picker"
+              selectedYear={selectedYear}
+              onYearChange={(year) => {
+                onMonthChange(buildExpenseMonth(year, selectedMonthIndex));
+                setIsMonthPickerOpen(false);
+              }}
+            />
+          )}
+          {isMonthPickerOpen && !isYearMode && (
             <MonthPicker
               buildMonth={buildExpenseMonth}
               className="right-0 top-12"
@@ -954,6 +979,21 @@ function readSavedTrendMonthsBack(fallbackMonthsBack: number) {
   }
 }
 
+function readSavedTrendYearsBack(fallbackYearsBack: number) {
+  try {
+    const savedValue = window.localStorage.getItem(EXPENSES_STORAGE_KEY);
+    const savedExpenses = savedValue ? JSON.parse(savedValue) : undefined;
+
+    if (!isSavedExpensesByMonth(savedExpenses)) {
+      return fallbackYearsBack;
+    }
+
+    return getSavedTrendBack(savedExpenses.trendYearsBack, fallbackYearsBack);
+  } catch {
+    return fallbackYearsBack;
+  }
+}
+
 function mergeSavedExpenseCategories(savedCategories: unknown[]) {
   try {
     const defaultCategoryIds = new Set(defaultCategories.map(({ id }) => id));
@@ -1012,6 +1052,19 @@ function saveTrendMonthsBack(monthsBack: number) {
     const expensesByMonth = normalizeSavedExpenses(savedExpenses, getCurrentExpenseMonth().key);
 
     expensesByMonth.trendMonthsBack = getSavedTrendMonthsBack(monthsBack, DEFAULT_TREND_MONTHS_BACK);
+    window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expensesByMonth));
+  } catch {
+    // Ignore storage failures so trend controls remain usable in restricted browser modes.
+  }
+}
+
+function saveTrendYearsBack(yearsBack: number) {
+  try {
+    const savedValue = window.localStorage.getItem(EXPENSES_STORAGE_KEY);
+    const savedExpenses = savedValue ? JSON.parse(savedValue) : undefined;
+    const expensesByMonth = normalizeSavedExpenses(savedExpenses, getCurrentExpenseMonth().key);
+
+    expensesByMonth.trendYearsBack = getSavedTrendBack(yearsBack, DEFAULT_TREND_YEARS_BACK);
     window.localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expensesByMonth));
   } catch {
     // Ignore storage failures so trend controls remain usable in restricted browser modes.
@@ -1116,6 +1169,10 @@ function getSavedExpenseNumber(value: unknown, fallback: number) {
 }
 
 function getSavedTrendMonthsBack(value: unknown, fallback: number) {
+  return getSavedTrendBack(value, fallback);
+}
+
+function getSavedTrendBack(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.min(12, Math.max(0, Math.round(value))) : fallback;
 }
 

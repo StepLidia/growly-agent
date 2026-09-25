@@ -1,6 +1,13 @@
 import { useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { ArrowDown, ArrowLeft, ArrowUp, ChartLine, TrendingUp, Wallet, WalletCards, type LucideIcon } from 'lucide-react';
 import {
+  buildExpenseTrendPeriods,
+  getPreviousExpenseTrendEndMonth,
+  type ExpenseTrendAggregationMode,
+  type ExpenseTrendCategory,
+  type ExpenseTrendPeriod,
+} from '../calculations/expenseTrendCalculations';
+import {
   Bar,
   BarChart,
   CartesianGrid,
@@ -22,7 +29,7 @@ import { tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 import type { ExpenseCategory, ExpenseMonth } from '../pages/ExpensesPage';
 
-export type ExpenseTrendAggregationMode = 'month' | 'year';
+export type { ExpenseTrendAggregationMode } from '../calculations/expenseTrendCalculations';
 
 type ExpenseTrendAnalysisPageProps = {
   aggregationMode: ExpenseTrendAggregationMode;
@@ -30,27 +37,17 @@ type ExpenseTrendAnalysisPageProps = {
   currentMonthlyIncome: number;
   expenseMonth: ExpenseMonth;
   initialMonthsBack: number;
+  initialYearsBack: number;
   readExpenses: (monthKey: string) => ExpenseCategory[];
   readMonthlyIncome: (monthKey: string) => number;
   onMonthsBackChange?: (monthsBack: number) => void;
+  onYearsBackChange?: (yearsBack: number) => void;
 };
 
 type MetricTrend = {
   trend: string;
   trendDirection: 'up' | 'down';
   trendTone: 'good' | 'bad';
-};
-
-type ExpenseTrendMonth = {
-  month: ExpenseMonth;
-  categories: ExpenseCategory[];
-  monthlyCashFlow: number;
-  monthlyIncome: number;
-  savingsRate: number;
-  totalExpenses: number;
-  averageDailyExpense: number;
-  monthChangeAmount: number | null;
-  highestCategory: ExpenseCategory | null;
 };
 
 type CategoryTrendSummary = {
@@ -73,31 +70,56 @@ export function ExpenseTrendAnalysisPage({
   currentMonthlyIncome,
   expenseMonth,
   initialMonthsBack,
+  initialYearsBack,
   onMonthsBackChange,
+  onYearsBackChange,
   readExpenses,
   readMonthlyIncome,
 }: ExpenseTrendAnalysisPageProps) {
   const gradientPrefix = useId().replaceAll(':', '');
   const [monthsBack, setMonthsBack] = useState(initialMonthsBack);
+  const [yearsBack, setYearsBack] = useState(initialYearsBack);
   const [isShowingOtherCategories, setIsShowingOtherCategories] = useState(false);
-  const analyzedMonthCount = monthsBack + 1;
-  const trendMonths = useMemo(
-    () => buildExpenseTrendMonths(expenseMonth, analyzedMonthCount, readExpenses, readMonthlyIncome, currentCategories, currentMonthlyIncome),
-    [analyzedMonthCount, currentCategories, currentMonthlyIncome, expenseMonth, readExpenses, readMonthlyIncome],
+  const periodsBack = aggregationMode === 'month' ? monthsBack : yearsBack;
+  const analyzedPeriodCount = periodsBack + 1;
+  const trendPeriods = useMemo(
+    () => buildExpenseTrendPeriods({
+      aggregationMode,
+      endMonth: expenseMonth,
+      periodCount: analyzedPeriodCount,
+      readExpenses,
+      readMonthlyIncome,
+      currentCategories,
+      currentMonthlyIncome,
+    }),
+    [aggregationMode, analyzedPeriodCount, currentCategories, currentMonthlyIncome, expenseMonth, readExpenses, readMonthlyIncome],
   );
-  const previousTrendMonths = useMemo(
-    () => buildExpenseTrendMonths(getPreviousExpenseMonth(trendMonths[0].month), analyzedMonthCount, readExpenses, readMonthlyIncome),
-    [analyzedMonthCount, readExpenses, readMonthlyIncome, trendMonths],
+  const previousTrendPeriods = useMemo(
+    () => buildExpenseTrendPeriods({
+      aggregationMode,
+      endMonth: getPreviousExpenseTrendEndMonth(trendPeriods[0], aggregationMode),
+      periodCount: analyzedPeriodCount,
+      readExpenses,
+      readMonthlyIncome,
+      endYearMonthCount: aggregationMode === 'year' ? trendPeriods.at(-1)?.includedMonthCount : undefined,
+    }),
+    [aggregationMode, analyzedPeriodCount, readExpenses, readMonthlyIncome, trendPeriods],
   );
-  const totalExpenses = trendMonths.reduce((sum, month) => sum + month.totalExpenses, 0);
-  const averageMonthlyExpenses = totalExpenses / Math.max(trendMonths.length, 1);
-  const averageDailyExpense =
-    trendMonths.reduce((sum, month) => sum + month.averageDailyExpense, 0) / Math.max(trendMonths.length, 1);
-  const highestMonth = trendMonths.reduce((highest, month) => (month.totalExpenses > highest.totalExpenses ? month : highest), trendMonths[0]);
-  const lowestMonth = trendMonths.reduce((lowest, month) => (month.totalExpenses < lowest.totalExpenses ? month : lowest), trendMonths[0]);
-  const categorySummaries = getTopCategorySummaries(trendMonths, 5);
-  const shareCategorySummaries = getShareCategorySummaries(trendMonths, categorySummaries);
-  const otherCategorySummaries = getOtherCategorySummaries(trendMonths, categorySummaries);
+  const totalExpenses = trendPeriods.reduce((sum, period) => sum + period.totalExpenses, 0);
+  const averagePeriodExpenses = totalExpenses / Math.max(trendPeriods.length, 1);
+  const averageExpense =
+    trendPeriods.reduce((sum, period) => sum + period.averageExpense, 0) / Math.max(trendPeriods.length, 1);
+  const highestPeriod = trendPeriods.reduce(
+    (highest, period) => (period.totalExpenses > highest.totalExpenses ? period : highest),
+    trendPeriods[0],
+  );
+  const lowestPeriod = trendPeriods.reduce(
+    (lowest, period) => (period.totalExpenses < lowest.totalExpenses ? period : lowest),
+    trendPeriods[0],
+  );
+  const categorySummaries = getTopCategorySummaries(trendPeriods, 5);
+  const shareCategorySummaries = getShareCategorySummaries(trendPeriods, categorySummaries);
+  const otherCategorySummaries = getOtherCategorySummaries(trendPeriods, categorySummaries);
   const isShowingOtherCategoryBreakdown = isShowingOtherCategories && otherCategorySummaries.length > 0;
   const displayedCategorySpendSummaries = isShowingOtherCategoryBreakdown ? otherCategorySummaries : shareCategorySummaries;
   const shareTooltipColors = Object.fromEntries(
@@ -108,90 +130,98 @@ export function ExpenseTrendAnalysisPage({
     ]),
   );
   const previousAverage =
-    previousTrendMonths.reduce((sum, month) => sum + month.totalExpenses, 0) / Math.max(previousTrendMonths.length, 1);
-  const averageTrend = buildMetricTrend(averageMonthlyExpenses, previousAverage, 'lower');
-  const expenseAxisTicks = buildThousandsTicks(trendMonths.map((month) => month.totalExpenses));
-  const dailyAxisTicks = buildDailyExpenseTicks(trendMonths.map((month) => month.averageDailyExpense));
-  const cashFlowAxisTicks = buildCashFlowTicks(trendMonths.map((month) => month.monthlyCashFlow));
-  const savingsRateAxisTicks = buildSavingsRateTicks(trendMonths.map((month) => month.savingsRate));
-  const monthChangeDomain = buildMonthChangeDomain(trendMonths.map((month) => month.monthChangeAmount ?? 0));
+    previousTrendPeriods.reduce((sum, period) => sum + period.totalExpenses, 0) /
+    Math.max(previousTrendPeriods.length, 1);
+  const averageTrend = buildMetricTrend(averagePeriodExpenses, previousAverage, 'lower');
+  const expenseAxisTicks = buildThousandsTicks(trendPeriods.map((period) => period.totalExpenses));
+  const averageExpenseAxisTicks = buildAverageExpenseTicks(trendPeriods.map((period) => period.averageExpense));
+  const cashFlowAxisTicks = buildCashFlowTicks(trendPeriods.map((period) => period.cashFlow));
+  const savingsRateAxisTicks = buildSavingsRateTicks(trendPeriods.map((period) => period.savingsRate));
+  const periodChangeDomain = buildPeriodChangeDomain(trendPeriods.map((period) => period.changeAmount ?? 0));
   const categoryStackAxisTicks = buildRoundedThousandsTicks(
-    trendMonths.map((month) =>
-      displayedCategorySpendSummaries.reduce((sum, category) => sum + getShareCategoryValue(month.categories, category), 0),
+    trendPeriods.map((period) =>
+      displayedCategorySpendSummaries.reduce((sum, category) => sum + getShareCategoryValue(period.categories, category), 0),
     ),
+    aggregationMode === 'year' ? 4 : undefined,
   );
-  const chartData = trendMonths.map((month) => ({
-    name: month.month.shortLabel,
-    averageDailyExpense: Math.round(month.averageDailyExpense),
-    monthlyCashFlow: month.monthlyCashFlow,
-    monthChange: month.monthChangeAmount ?? 0,
-    savingsRate: month.savingsRate,
-    totalExpenses: month.totalExpenses,
+  const chartData = trendPeriods.map((period) => ({
+    name: period.shortLabel,
+    averageExpense: Math.round(period.averageExpense),
+    cashFlow: period.cashFlow,
+    periodChange: period.changeAmount ?? 0,
+    savingsRate: period.savingsRate,
+    totalExpenses: period.totalExpenses,
     ...Object.fromEntries(
       shareCategorySummaries.map((category) => [
         `${category.id}Share`,
-        getPercent(getShareCategoryValue(month.categories, category), month.totalExpenses),
+        getPercent(getShareCategoryValue(period.categories, category), period.totalExpenses),
       ]),
     ),
     ...Object.fromEntries(
       [...shareCategorySummaries, ...otherCategorySummaries].map((category) => [
         `${category.id}Amount`,
-        getShareCategoryValue(month.categories, category),
+        getShareCategoryValue(period.categories, category),
       ]),
     ),
     ...Object.fromEntries(
       categorySummaries.map((category) => [
         category.id,
-        month.categories.find((monthCategory) => monthCategory.id === category.id)?.value ?? 0,
+        period.categories.find((periodCategory) => periodCategory.id === category.id)?.value ?? 0,
       ]),
     ),
   }));
 
   return (
     <section className="mt-5 space-y-3" data-aggregation-mode={aggregationMode}>
-      <TrendMonthsSlider
-        value={monthsBack}
+      <TrendPeriodSlider
+        aggregationMode={aggregationMode}
+        value={periodsBack}
         onChange={(value) => {
-          setMonthsBack(value);
-          onMonthsBackChange?.(value);
+          if (aggregationMode === 'year') {
+            setYearsBack(value);
+            onYearsBackChange?.(value);
+          } else {
+            setMonthsBack(value);
+            onMonthsBackChange?.(value);
+          }
         }}
       />
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <TrendMetricCard
           icon={WalletCards}
           iconClassName="bg-blue-600/10 text-blue-600"
-          title="Average Monthly Expenses"
-          amount={averageMonthlyExpenses}
-          helper={`vs previous ${analyzedMonthCount} months`}
+          title={aggregationMode === 'year' ? 'Average Yearly Expenses' : 'Average Monthly Expenses'}
+          amount={averagePeriodExpenses}
+          helper={`vs previous ${analyzedPeriodCount} ${aggregationMode === 'year' ? 'years' : 'months'}`}
           trend={averageTrend}
         />
         <TrendMetricCard
           icon={TrendingUp}
           iconClassName="bg-emerald-500/12 text-emerald-600"
-          title={`Total Expenses (${analyzedMonthCount} Months)`}
+          title={`Total Expenses (${analyzedPeriodCount} ${aggregationMode === 'year' ? 'Years' : 'Months'})`}
           amount={totalExpenses}
-          helper={`${trendMonths[0].month.label} - ${trendMonths.at(-1)?.month.label}`}
+          helper={`${trendPeriods[0].label} - ${trendPeriods.at(-1)?.label}`}
         />
         <TrendMetricCard
           icon={ChartLine}
           iconClassName="bg-amber-500/12 text-amber-500"
-          title="Highest Month"
-          amount={highestMonth.totalExpenses}
-          helper={highestMonth.month.label}
+          title={aggregationMode === 'year' ? 'Highest Year' : 'Highest Month'}
+          amount={highestPeriod.totalExpenses}
+          helper={highestPeriod.label}
         />
         <TrendMetricCard
           icon={ArrowDown}
           iconClassName="bg-violet-500/12 text-violet-600"
-          title="Lowest Month"
-          amount={lowestMonth.totalExpenses}
-          helper={lowestMonth.month.label}
+          title={aggregationMode === 'year' ? 'Lowest Year' : 'Lowest Month'}
+          amount={lowestPeriod.totalExpenses}
+          helper={lowestPeriod.label}
         />
         <TrendMetricCard
           icon={Wallet}
           iconClassName="bg-cyan-500/12 text-cyan-600"
-          title="Average Daily Expense"
-          amount={averageDailyExpense}
-          helper={`Across ${analyzedMonthCount} months`}
+          title={aggregationMode === 'year' ? 'Average Monthly Expense' : 'Average Daily Expense'}
+          amount={averageExpense}
+          helper={`Across ${analyzedPeriodCount} ${aggregationMode === 'year' ? 'years' : 'months'}`}
         />
       </div>
 
@@ -200,7 +230,11 @@ export function ExpenseTrendAnalysisPage({
           <ChartLegend
             items={[
               { label: 'Total Expenses (CHF)', color: '#2563eb' },
-              { label: 'Average Daily Expense (CHF)', color: '#2563eb', line: true },
+              {
+                label: aggregationMode === 'year' ? 'Average Monthly Expense (CHF)' : 'Average Daily Expense (CHF)',
+                color: '#2563eb',
+                line: true,
+              },
             ]}
           />
           <ResponsiveContainer width="100%" height={260}>
@@ -242,7 +276,7 @@ export function ExpenseTrendAnalysisPage({
                 orientation="right"
                 tick={{ fill: '#334155', fontSize: 12 }}
                 tickLine={false}
-                ticks={dailyAxisTicks}
+                ticks={averageExpenseAxisTicks}
                 width={36}
                 yAxisId="daily"
               />
@@ -264,9 +298,9 @@ export function ExpenseTrendAnalysisPage({
                 />
               </Bar>
               <Line
-                dataKey="averageDailyExpense"
+                dataKey="averageExpense"
                 dot={{ fill: '#60a5fa', r: 4, stroke: '#2563eb', strokeWidth: 2 }}
-                name="Average Daily Expense"
+                name={aggregationMode === 'year' ? 'Average Monthly Expense' : 'Average Daily Expense'}
                 stroke="#2563eb"
                 strokeWidth={2}
                 yAxisId="daily"
@@ -275,7 +309,7 @@ export function ExpenseTrendAnalysisPage({
           </ResponsiveContainer>
         </TrendPanel>
 
-        <TrendPanel title="Monthly Cash Flow">
+        <TrendPanel title={aggregationMode === 'year' ? 'Annual Cash Flow' : 'Monthly Cash Flow'}>
           <ChartLegend
             items={[
               { label: 'Income - Expenses (CHF)', color: CASH_FLOW_COLOR },
@@ -330,14 +364,14 @@ export function ExpenseTrendAnalysisPage({
               />
               <Tooltip content={<TrendTooltip />} cursor={{ fill: 'rgba(132,204,22,.08)' }} />
               <Bar
-                dataKey="monthlyCashFlow"
+                dataKey="cashFlow"
                 fill={`url(#${gradientPrefix}-monthly-cash-flow)`}
-                name="Monthly Cash Flow"
+                name={aggregationMode === 'year' ? 'Annual Cash Flow' : 'Monthly Cash Flow'}
                 radius={[6, 6, 0, 0]}
                 yAxisId="cashFlow"
               >
                 <LabelList
-                  dataKey="monthlyCashFlow"
+                  dataKey="cashFlow"
                   fill="#0f172a"
                   fontSize={12}
                   fontWeight={700}
@@ -359,7 +393,7 @@ export function ExpenseTrendAnalysisPage({
       </div>
 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)]">
-        <TrendPanel title="Month Over Month Change">
+        <TrendPanel title={aggregationMode === 'year' ? 'Year Over Year Change' : 'Month Over Month Change'}>
           <ResponsiveContainer width="100%" height={230}>
             <BarChart data={chartData} margin={{ left: -12, right: 12, top: 16 }}>
               <defs>
@@ -384,24 +418,24 @@ export function ExpenseTrendAnalysisPage({
                 tick={{ fill: '#334155', fontSize: 12 }}
                 tickFormatter={formatSignedThousandsAxis}
                 tickLine={false}
-                domain={monthChangeDomain}
+                domain={periodChangeDomain}
                 padding={{ bottom: 12, top: 8 }}
                 width={54}
               />
               <Tooltip content={<TrendTooltip />} cursor={{ fill: 'rgba(37,99,235,.08)' }} />
               <Bar
-                dataKey="monthChange"
-                name="vs previous month"
+                dataKey="periodChange"
+                name={aggregationMode === 'year' ? 'vs previous year' : 'vs previous month'}
                 radius={[6, 6, 0, 0]}
-                shape={<MonthChangeBarShape />}
+                shape={<PeriodChangeBarShape />}
               >
-                {chartData.map((month) => (
+                {chartData.map((period) => (
                   <Cell
-                    key={month.name}
-                    fill={`url(#${gradientPrefix}-${month.monthChange >= 0 ? 'negative' : 'positive'}-change)`}
+                    key={period.name}
+                    fill={`url(#${gradientPrefix}-${period.periodChange >= 0 ? 'negative' : 'positive'}-change)`}
                   />
                 ))}
-                <LabelList content={<MonthChangeLabel />} dataKey="monthChange" />
+                <LabelList content={<PeriodChangeLabel />} dataKey="periodChange" />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -519,39 +553,55 @@ export function ExpenseTrendAnalysisPage({
         </TrendPanel>
       </div>
 
-      <TrendPanel title="Monthly Summary">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="text-slate-600">
-              <tr className="border-b border-slate-300/50">
-                <th className="px-2 py-2 font-bold">Month</th>
-                <th className="px-2 py-2 text-center font-bold">Total Expenses</th>
-                <th className="px-2 py-2 text-center font-bold">vs Previous Month</th>
-                <th className="px-2 py-2 text-center font-bold">Average Daily</th>
-                <th className="px-2 py-2 text-center font-bold">Highest Category</th>
-                <th className="px-2 py-2 text-center font-bold">Category Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {trendMonths.map((month) => (
-                <tr key={month.month.key} className="border-b border-slate-300/35 last:border-b-0">
-                  <td className="px-2 py-2 font-semibold text-slate-800">{month.month.label}</td>
-                  <td className="px-2 py-2 text-center font-semibold text-slate-950">{currency(month.totalExpenses)} CHF</td>
-                  <td className={`px-2 py-2 text-center font-bold ${getTrendTextClass(month.monthChangeAmount ?? 0)}`}>
-                    {month.monthChangeAmount === null ? '-' : formatSignedCurrency(month.monthChangeAmount)}
-                  </td>
-                  <td className="px-2 py-2 text-center font-semibold text-slate-700">{currency(month.averageDailyExpense)} CHF</td>
-                  <td className="px-2 py-2 text-center font-semibold text-slate-700">{month.highestCategory?.label ?? '-'}</td>
-                  <td className="px-2 py-2 text-center font-semibold text-slate-950">
-                    {currency(month.highestCategory?.value ?? 0)} CHF
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </TrendPanel>
+      <TrendSummaryTable aggregationMode={aggregationMode} periods={trendPeriods} />
     </section>
+  );
+}
+
+function TrendSummaryTable({
+  aggregationMode,
+  periods,
+}: {
+  aggregationMode: ExpenseTrendAggregationMode;
+  periods: ExpenseTrendPeriod[];
+}) {
+  return (
+    <TrendPanel title={aggregationMode === 'year' ? 'Yearly Summary' : 'Monthly Summary'}>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-left text-sm">
+          <thead className="text-slate-600">
+            <tr className="border-b border-slate-300/50">
+              <th className="px-2 py-2 font-bold">{aggregationMode === 'year' ? 'Year' : 'Month'}</th>
+              <th className="px-2 py-2 text-center font-bold">Total Expenses</th>
+              <th className="px-2 py-2 text-center font-bold">
+                {aggregationMode === 'year' ? 'vs Previous Year' : 'vs Previous Month'}
+              </th>
+              <th className="px-2 py-2 text-center font-bold">
+                {aggregationMode === 'year' ? 'Average Monthly' : 'Average Daily'}
+              </th>
+              <th className="px-2 py-2 text-center font-bold">Highest Category</th>
+              <th className="px-2 py-2 text-center font-bold">Category Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {periods.map((period) => (
+              <tr key={period.key} className="border-b border-slate-300/35 last:border-b-0">
+                <td className="px-2 py-2 font-semibold text-slate-800">{period.label}</td>
+                <td className="px-2 py-2 text-center font-semibold text-slate-950">{currency(period.totalExpenses)} CHF</td>
+                <td className={`px-2 py-2 text-center font-bold ${getTrendTextClass(period.changeAmount ?? 0)}`}>
+                  {period.changeAmount === null ? '-' : formatSignedCurrency(period.changeAmount)}
+                </td>
+                <td className="px-2 py-2 text-center font-semibold text-slate-700">{currency(period.averageExpense)} CHF</td>
+                <td className="px-2 py-2 text-center font-semibold text-slate-700">{period.highestCategory?.label ?? '-'}</td>
+                <td className="px-2 py-2 text-center font-semibold text-slate-950">
+                  {currency(period.highestCategory?.value ?? 0)} CHF
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </TrendPanel>
   );
 }
 
@@ -598,23 +648,32 @@ function TrendMetricCard({
   );
 }
 
-function TrendMonthsSlider({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+function TrendPeriodSlider({
+  aggregationMode,
+  value,
+  onChange,
+}: {
+  aggregationMode: ExpenseTrendAggregationMode;
+  value: number;
+  onChange: (value: number) => void;
+}) {
   const percent = getPercent(value, 12);
-  const analyzedMonthCount = value + 1;
+  const analyzedPeriodCount = value + 1;
+  const periodLabel = aggregationMode === 'year' ? 'Years' : 'Months';
 
   return (
     <section className="glass-panel px-5 py-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex min-w-44 items-baseline justify-between gap-3 md:block">
-          <p className="text-sm font-bold text-slate-900">Months Back</p>
+          <p className="text-sm font-bold text-slate-900">{periodLabel} Back</p>
           <p className="mt-1 text-sm text-slate-600">
-            <span className="font-extrabold text-slate-950">{analyzedMonthCount}</span> analyzed
+            <span className="font-extrabold text-slate-950">{analyzedPeriodCount}</span> analyzed
           </p>
         </div>
         <div className="flex flex-1 items-center gap-4">
           <span className="text-sm font-bold text-slate-500">0</span>
           <input
-            aria-label="Months back for expense trend analysis"
+            aria-label={`${periodLabel} back for expense trend analysis`}
             className="years-slider"
             max={12}
             min={0}
@@ -704,7 +763,7 @@ function TrendTooltip({
         const dataKey = String(item.dataKey ?? '');
         const name = item.name ?? '';
         const labelColor =
-          item.name === 'Average Daily Expense' ? '#059669' : colorByTooltipKey[dataKey] ?? colorByTooltipKey[name] ?? item.color;
+          item.name?.startsWith('Average ') ? '#059669' : colorByTooltipKey[dataKey] ?? colorByTooltipKey[name] ?? item.color;
 
         return (
           <p key={`${item.name}-${dataKey}`} className="text-slate-700">
@@ -720,11 +779,11 @@ function TrendTooltip({
 }
 
 function formatTooltipValue(name: string | undefined, value: number, dataKey: string | number | undefined) {
-  if (name?.includes('previous month')) {
+  if (name?.includes('previous month') || name?.includes('previous year')) {
     return formatSignedCurrency(value);
   }
 
-  if (dataKey === 'monthlyCashFlow') {
+  if (dataKey === 'cashFlow') {
     return `${formatSignedCurrency(value)} CHF`;
   }
 
@@ -739,7 +798,7 @@ function formatTooltipValue(name: string | undefined, value: number, dataKey: st
   return `${currency(value)} CHF`;
 }
 
-function MonthChangeLabel({
+function PeriodChangeLabel({
   value,
   width,
   x,
@@ -773,7 +832,7 @@ function MonthChangeLabel({
   );
 }
 
-function MonthChangeBarShape({
+function PeriodChangeBarShape({
   fill,
   height,
   value,
@@ -831,51 +890,11 @@ function MonthChangeBarShape({
   );
 }
 
-function buildExpenseTrendMonths(
-  endMonth: ExpenseMonth,
-  monthCount: number,
-  readExpenses: (monthKey: string) => ExpenseCategory[],
-  readMonthlyIncome: (monthKey: string) => number,
-  currentCategories?: ExpenseCategory[],
-  currentMonthlyIncome?: number,
-): ExpenseTrendMonth[] {
-  const [endYear, endMonthNumber] = endMonth.key.split('-').map(Number);
-  const months = Array.from({ length: monthCount }, (_, index) =>
-    buildExpenseMonth(endYear, endMonthNumber - monthCount + index),
-  );
-
-  return months.map((month, index) => {
-    const categories = month.key === endMonth.key && currentCategories ? currentCategories : readExpenses(month.key);
-    const monthlyIncome =
-      month.key === endMonth.key && typeof currentMonthlyIncome === 'number' ? currentMonthlyIncome : readMonthlyIncome(month.key);
-    const totalExpenses = getCategoryTotal(categories);
-    const monthlyCashFlow = monthlyIncome - totalExpenses;
-    const previousMonth = index === 0 ? getPreviousExpenseMonth(month) : months[index - 1];
-    const previousCategories =
-      previousMonth.key === endMonth.key && currentCategories ? currentCategories : readExpenses(previousMonth.key);
-    const previousTotal = getCategoryTotal(previousCategories);
-    const monthChangeAmount = previousTotal > 0 ? totalExpenses - previousTotal : null;
-    const highestCategory = [...categories].sort((first, second) => second.value - first.value)[0] ?? null;
-
-    return {
-      month,
-      categories,
-      monthlyCashFlow,
-      monthlyIncome,
-      savingsRate: getPercent(monthlyCashFlow, monthlyIncome),
-      totalExpenses,
-      averageDailyExpense: totalExpenses / getDaysInExpenseMonth(month),
-      monthChangeAmount,
-      highestCategory,
-    };
-  });
-}
-
-function getTopCategorySummaries(trendMonths: ExpenseTrendMonth[], maxCategories: number): CategoryTrendSummary[] {
+function getTopCategorySummaries(trendPeriods: ExpenseTrendPeriod[], maxCategories: number): CategoryTrendSummary[] {
   const categoryTotals = new Map<string, CategoryTrendSummary>();
 
-  for (const month of trendMonths) {
-    for (const category of month.categories) {
+  for (const period of trendPeriods) {
+    for (const category of period.categories) {
       const existingCategory = categoryTotals.get(category.id);
 
       categoryTotals.set(category.id, {
@@ -891,15 +910,15 @@ function getTopCategorySummaries(trendMonths: ExpenseTrendMonth[], maxCategories
 }
 
 function getShareCategorySummaries(
-  trendMonths: ExpenseTrendMonth[],
+  trendPeriods: ExpenseTrendPeriod[],
   topCategorySummaries: CategoryTrendSummary[],
 ): ShareCategorySummary[] {
   const topCategoryIds = new Set(topCategorySummaries.map((category) => category.id));
   const otherCategoryIds = new Set<string>();
   let otherCategoryTotal = 0;
 
-  for (const month of trendMonths) {
-    for (const category of month.categories) {
+  for (const period of trendPeriods) {
+    for (const category of period.categories) {
       if (!topCategoryIds.has(category.id)) {
         otherCategoryIds.add(category.id);
         otherCategoryTotal += category.value;
@@ -926,14 +945,14 @@ function getShareCategorySummaries(
 }
 
 function getOtherCategorySummaries(
-  trendMonths: ExpenseTrendMonth[],
+  trendPeriods: ExpenseTrendPeriod[],
   topCategorySummaries: CategoryTrendSummary[],
 ): ShareCategorySummary[] {
   const topCategoryIds = new Set(topCategorySummaries.map((category) => category.id));
   const otherCategoryTotals = new Map<string, ShareCategorySummary>();
 
-  for (const month of trendMonths) {
-    for (const category of month.categories) {
+  for (const period of trendPeriods) {
+    for (const category of period.categories) {
       if (topCategoryIds.has(category.id)) {
         continue;
       }
@@ -953,7 +972,7 @@ function getOtherCategorySummaries(
   return [...otherCategoryTotals.values()].sort((first, second) => second.total - first.total);
 }
 
-function getShareCategoryValue(categories: ExpenseCategory[], shareCategory: ShareCategorySummary) {
+function getShareCategoryValue(categories: ExpenseTrendCategory[], shareCategory: ShareCategorySummary) {
   const sourceIds = new Set(shareCategory.sourceIds);
 
   return categories.reduce((sum, category) => (sourceIds.has(category.id) ? sum + category.value : sum), 0);
@@ -970,37 +989,6 @@ function buildMetricTrend(currentValue: number, previousValue: number, betterWhe
     trendDirection,
     trendTone: isGood ? 'good' : 'bad',
   };
-}
-
-function buildExpenseMonth(year: number, monthIndex: number): ExpenseMonth {
-  const date = new Date(year, monthIndex, 1);
-
-  return {
-    key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-    label: date.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric',
-    }),
-    shortLabel: date.toLocaleDateString('en-US', {
-      month: 'short',
-    }),
-  };
-}
-
-function getPreviousExpenseMonth(expenseMonth: ExpenseMonth) {
-  const [year, month] = expenseMonth.key.split('-').map(Number);
-
-  return buildExpenseMonth(year, month - 2);
-}
-
-function getCategoryTotal(categories: ExpenseCategory[]) {
-  return categories.reduce((sum, category) => sum + category.value, 0);
-}
-
-function getDaysInExpenseMonth(expenseMonth: ExpenseMonth) {
-  const [year, month] = expenseMonth.key.split('-').map(Number);
-
-  return new Date(year, month, 0).getDate();
 }
 
 function getTrendTextClass(value: number) {
@@ -1047,14 +1035,15 @@ function buildThousandsTicks(values: number[]) {
   return Array.from({ length: 5 }, (_, index) => index * step);
 }
 
-function buildRoundedThousandsTicks(values: number[]) {
+function buildRoundedThousandsTicks(values: number[], maxIntervals?: number) {
   const maxValue = Math.max(...values, 0);
   const axisMax = Math.max(1000, Math.ceil(maxValue / 1000) * 1000);
+  const step = maxIntervals ? Math.max(1000, Math.ceil(axisMax / maxIntervals / 1000) * 1000) : 1000;
 
-  return Array.from({ length: axisMax / 1000 + 1 }, (_, index) => index * 1000);
+  return Array.from({ length: Math.ceil(axisMax / step) + 1 }, (_, index) => index * step);
 }
 
-function buildDailyExpenseTicks(values: number[]) {
+function buildAverageExpenseTicks(values: number[]) {
   const maxValue = Math.max(...values, 0);
   const axisMax = Math.max(100, Math.ceil((maxValue * 2.25) / 50) * 50);
   const step = axisMax / 4;
@@ -1093,7 +1082,7 @@ function buildSavingsRateTicks(values: number[]) {
   return [0, 25, 50, 75, 100];
 }
 
-function buildMonthChangeDomain(values: number[]): [number, number] {
+function buildPeriodChangeDomain(values: number[]): [number, number] {
   const minValue = Math.min(...values, 0);
   const maxValue = Math.max(...values, 0);
   const lowerPadding = Math.max(700, Math.abs(minValue) * 1.5);
