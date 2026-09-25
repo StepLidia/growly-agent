@@ -20,7 +20,7 @@ import { buttonClasses } from '../constants/buttonStyles';
 import { hoverTooltipClasses, tooltipClasses, tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 import { useEditableNumber } from '../hooks/useEditableNumber';
-import { ExpenseTrendAnalysisPage } from './ExpenseTrendAnalysisPage';
+import { ExpenseTrendAnalysisPage, type ExpenseTrendAggregationMode } from './ExpenseTrendAnalysisPage';
 import { InsightValue } from '../components/InsightValue';
 import { MonthPicker } from '../components/MonthPicker';
 
@@ -89,6 +89,7 @@ export function ExpensesPage({
   const [categories, setCategories] = useState<ExpenseCategory[]>(() => readSavedExpenses(expenseMonth.key));
   const [monthlyIncome, setMonthlyIncome] = useState(() => readSavedMonthlyIncome(expenseMonth.key, dashboardMonthlyIncome));
   const [trendMonthsBack, setTrendMonthsBack] = useState(() => readSavedTrendMonthsBack(DEFAULT_TREND_MONTHS_BACK));
+  const [trendAggregationMode, setTrendAggregationMode] = useState<ExpenseTrendAggregationMode>('month');
   const [draftCategory, setDraftCategory] = useState<{ name: string; value: number } | null>(null);
   const [isTrendVisible, setIsTrendVisible] = useState(initialTrendVisible);
   const totalExpenses = useMemo(() => categories.reduce((sum, category) => sum + category.value, 0), [categories]);
@@ -198,14 +199,17 @@ export function ExpensesPage({
   return (
     <>
       <ExpensesHeader
+        aggregationMode={trendAggregationMode}
         expenseMonth={expenseMonth}
         isTrendVisible={isTrendVisible}
+        onAggregationModeChange={setTrendAggregationMode}
         onMonthChange={selectExpenseMonth}
         onResetMonth={resetCurrentMonth}
         onToggleTrend={() => updateTrendVisibility(!isTrendVisible)}
       />
       {isTrendVisible && (
         <ExpenseTrendAnalysisPage
+          aggregationMode={trendAggregationMode}
           currentCategories={categories}
           currentMonthlyIncome={monthlyIncome}
           expenseMonth={expenseMonth}
@@ -342,14 +346,18 @@ export function ExpensesPage({
 }
 
 function ExpensesHeader({
+  aggregationMode,
   expenseMonth,
   isTrendVisible,
+  onAggregationModeChange,
   onMonthChange,
   onResetMonth,
   onToggleTrend,
 }: {
+  aggregationMode: ExpenseTrendAggregationMode;
   expenseMonth: ExpenseMonth;
   isTrendVisible: boolean;
+  onAggregationModeChange: (mode: ExpenseTrendAggregationMode) => void;
   onMonthChange: (month: ExpenseMonth) => void;
   onResetMonth: () => void;
   onToggleTrend: () => void;
@@ -362,7 +370,28 @@ function ExpensesHeader({
         <h1 className="text-3xl font-semibold tracking-normal text-slate-950">Expenses</h1>
         <p className="mt-1 text-sm text-slate-700">Track your spending. Understand your habits. Take control.</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {isTrendVisible && (
+          <div aria-label="Expense trend aggregation" className="flex items-center gap-2" role="group">
+            {(['month', 'year'] as const).map((mode) => {
+              const isActive = aggregationMode === mode;
+
+              return (
+                <button
+                  key={mode}
+                  className={buttonClasses({
+                    className: isActive ? 'bg-blue-100/90 text-blue-700 shadow-inner' : '',
+                  })}
+                  aria-pressed={isActive}
+                  type="button"
+                  onClick={() => onAggregationModeChange(mode)}
+                >
+                  {mode === 'month' ? 'Month' : 'Year'}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="relative">
           <button
             className={buttonClasses({ className: 'min-w-44 whitespace-nowrap' })}

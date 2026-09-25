@@ -22,7 +22,10 @@ import { tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 import type { ExpenseCategory, ExpenseMonth } from '../pages/ExpensesPage';
 
+export type ExpenseTrendAggregationMode = 'month' | 'year';
+
 type ExpenseTrendAnalysisPageProps = {
+  aggregationMode: ExpenseTrendAggregationMode;
   currentCategories: ExpenseCategory[];
   currentMonthlyIncome: number;
   expenseMonth: ExpenseMonth;
@@ -65,6 +68,7 @@ const OTHERS_CATEGORY_COLOR = '#94a3b8';
 const CASH_FLOW_COLOR = '#11802d';
 
 export function ExpenseTrendAnalysisPage({
+  aggregationMode,
   currentCategories,
   currentMonthlyIncome,
   expenseMonth,
@@ -144,7 +148,7 @@ export function ExpenseTrendAnalysisPage({
   }));
 
   return (
-    <section className="mt-5 space-y-3">
+    <section className="mt-5 space-y-3" data-aggregation-mode={aggregationMode}>
       <TrendMonthsSlider
         value={monthsBack}
         onChange={(value) => {
