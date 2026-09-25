@@ -384,18 +384,26 @@ function ExpensesHeader({
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
         {isTrendVisible && (
-          <div aria-label="Expense trend aggregation" className="flex items-center gap-2" role="group">
+          <div
+            aria-label="Expense trend aggregation"
+            className="relative grid min-h-10 grid-cols-2 overflow-hidden rounded-lg border border-slate-300/30 bg-white/80 shadow-lg shadow-slate-400/10"
+            role="group"
+          >
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 w-1/2 rounded-lg bg-blue-500 shadow-lg shadow-blue-600/20 transition-transform duration-300 ease-out ${
+                aggregationMode === 'year' ? 'translate-x-full' : 'translate-x-0'
+              }`}
+            />
             {(['month', 'year'] as const).map((mode) => {
               const isActive = aggregationMode === mode;
 
               return (
                 <button
                   key={mode}
-                  className={buttonClasses({
-                    className: isActive
-                      ? '!border-blue-500 !bg-blue-500 !text-white shadow-blue-600/20 hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white'
-                      : '',
-                  })}
+                  className={`relative z-10 min-h-10 px-4 py-2 text-sm font-bold transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/30 ${
+                    isActive ? 'text-white' : 'text-blue-900 hover:text-blue-600'
+                  }`}
                   aria-pressed={isActive}
                   type="button"
                   onClick={() => onAggregationModeChange(mode)}
@@ -408,7 +416,7 @@ function ExpensesHeader({
         )}
         <div className="relative">
           <button
-            className={buttonClasses({ className: 'min-w-44 whitespace-nowrap' })}
+            className={buttonClasses({ className: 'w-48 shrink-0 whitespace-nowrap' })}
             aria-controls={isYearMode ? 'expenses-year-picker' : 'expenses-month-picker'}
             aria-expanded={isMonthPickerOpen}
             type="button"
