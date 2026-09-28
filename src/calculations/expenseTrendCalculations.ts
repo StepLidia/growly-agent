@@ -201,17 +201,24 @@ function aggregateCategories(categories: ExpenseTrendCategory[]) {
   const totals = new Map<string, ExpenseTrendCategory>();
 
   for (const category of categories) {
-    const existingCategory = totals.get(category.id);
+    const categoryKey = getCategoryAggregationKey(category);
+    const existingCategory = totals.get(categoryKey);
 
-    totals.set(category.id, {
-      id: category.id,
-      label: category.label,
-      color: category.color,
+    totals.set(categoryKey, {
+      id: categoryKey,
+      label: existingCategory?.label ?? category.label,
+      color: existingCategory?.color ?? category.color,
       value: (existingCategory?.value ?? 0) + category.value,
     });
   }
 
   return [...totals.values()];
+}
+
+function getCategoryAggregationKey(category: ExpenseTrendCategory) {
+  const generatedManualCategoryId = category.id.match(/^(.*)-\d{10,}$/);
+
+  return generatedManualCategoryId?.[1] || category.id;
 }
 
 function buildExpenseMonth(year: number, monthIndex: number): ExpenseTrendMonth {

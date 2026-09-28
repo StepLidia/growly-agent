@@ -68,6 +68,33 @@ describe('expense trend calculations', () => {
     expect(readExpenses).not.toHaveBeenCalledWith('2026-10');
   });
 
+  it('groups manual categories by their stable key when their generated timestamp ids differ', () => {
+    const periods = buildExpenseTrendPeriods({
+      aggregationMode: 'year',
+      endMonth: selectedMonth,
+      periodCount: 1,
+      readExpenses: (monthKey) => {
+        const month = Number(monthKey.slice(5, 7));
+
+        return [
+          {
+            id: `shopping-${1700000000000 + month}`,
+            label: 'Shopping',
+            color: '#237bd8',
+            value: month * 10,
+          },
+        ];
+      },
+      readMonthlyIncome: () => 1000,
+      currentDate: new Date(2026, 8, 25),
+    });
+
+    expect(periods[0].categories).toEqual([
+      { id: 'shopping', label: 'Shopping', color: '#237bd8', value: 450 },
+    ]);
+    expect(periods[0].totalExpenses).toBe(450);
+  });
+
   it('compares annual totals with the previous calendar year', () => {
     const periods = buildExpenseTrendPeriods({
       aggregationMode: 'year',
