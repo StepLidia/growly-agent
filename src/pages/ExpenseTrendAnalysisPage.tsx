@@ -522,7 +522,14 @@ export function ExpenseTrendAnalysisPage({
                       </linearGradient>
                     ))}
                   </defs>
-                  <Pie data={categorySummaries} dataKey="total" innerRadius="56%" outerRadius="86%" paddingAngle={1}>
+                  <Pie
+                    data={categorySummaries}
+                    dataKey="total"
+                    innerRadius="56%"
+                    nameKey="label"
+                    outerRadius="86%"
+                    paddingAngle={1}
+                  >
                     {categorySummaries.map((category) => (
                       <Cell key={category.id} fill={`url(#${gradientPrefix}-${category.id}-pie)`} />
                     ))}
