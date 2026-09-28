@@ -30,17 +30,17 @@ const DEFAULT_MONTHLY_INCOME = 6000;
 const DEFAULT_TREND_MONTHS_BACK = 5;
 const DEFAULT_TREND_YEARS_BACK = 5;
 const CATEGORY_COLOR_PALETTE = [
-  '#1e3a8a',
-  '#1d4ed8',
-  '#2563eb',
-  '#3b82f6',
-  '#60a5fa',
-  '#6366f1',
-  '#4f46e5',
-  '#7c3aed',
-  '#8b5cf6',
-  '#a78bfa',
-  '#c4b5fd',
+  '#4DB3E6',
+  '#3366DB',
+  '#EE758B',
+  '#1D9BB5',
+  '#8FC8E6',
+  '#A9BDF0',
+  '#F3B2BF',
+  '#9FCAD1',
+  '#C5D0DA',
+  '#D4DCE3',
+  '#E5EBF0',
 ] as const;
 
 export type ExpenseCategory = {
@@ -294,7 +294,7 @@ export function ExpensesPage({
               </div>
               <div className="mt-auto grid gap-3 pt-3 sm:grid-cols-[minmax(0,1fr)_2.5rem] sm:items-center">
                 <div className="flex items-center gap-3 rounded-lg border border-slate-400/45 bg-slate-200/25 px-3 py-2 text-xs font-medium text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-500/12 text-indigo-600">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-500/12 text-slate-600">
                     <CalendarClock className="h-5 w-5" />
                   </span>
                   <p>
@@ -404,9 +404,8 @@ function ExpensesHeader({
           >
             <span
               aria-hidden="true"
-              className={`absolute inset-y-0 left-0 w-1/2 rounded-lg bg-blue-500 shadow-lg shadow-blue-600/20 transition-transform duration-300 ease-out ${
-                aggregationMode === 'year' ? 'translate-x-full' : 'translate-x-0'
-              }`}
+              className={`absolute inset-y-0 left-0 w-1/2 rounded-lg bg-blue-500 shadow-lg shadow-blue-600/20 transition-transform duration-300 ease-out ${aggregationMode === 'year' ? 'translate-x-full' : 'translate-x-0'
+                }`}
             />
             {(['month', 'year'] as const).map((mode) => {
               const isActive = aggregationMode === mode;
@@ -414,9 +413,8 @@ function ExpensesHeader({
               return (
                 <button
                   key={mode}
-                  className={`relative z-10 min-h-10 px-4 py-2 text-sm font-bold transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/30 ${
-                    isActive ? 'text-white' : 'text-blue-900 hover:text-blue-600'
-                  }`}
+                  className={`relative z-10 min-h-10 px-4 py-2 text-sm font-bold transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/30 ${isActive ? 'text-white' : 'text-blue-900 hover:text-blue-600'
+                    }`}
                   aria-pressed={isActive}
                   type="button"
                   onClick={() => onAggregationModeChange(mode)}
@@ -860,9 +858,9 @@ function ProgressRow({
 
 function TopCostDrivers({ drivers, totalExpenses }: { drivers: ExpenseCategory[]; totalExpenses: number }) {
   const rankColors = [
+    'bg-red-500/12 text-red-600',
     'bg-blue-500/12 text-blue-600',
-    'bg-indigo-500/12 text-indigo-600',
-    'bg-violet-500/12 text-violet-600',
+    'bg-cyan-500/12 text-cyan-600',
   ];
 
   return (

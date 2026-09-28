@@ -242,20 +242,20 @@ export function ProgressPage({
           helperClassName={progressDelta >= 0 ? 'text-emerald-600' : 'text-red-500'}
         />
         <ProgressMetricCard
-          icon={CalendarDays}
-          iconClassName="bg-blue-600/10 text-blue-600"
-          title="Years Tracked"
-          value={yearsTracked.toFixed(1)}
-          helper="of your journey"
-          helperClassName="text-blue-600"
-        />
-        <ProgressMetricCard
           icon={Coins}
           iconClassName="bg-emerald-700/12 text-emerald-700"
           title="Current Wealth"
           value={`${currency(currentWealth)} CHF`}
           helper={`as of ${activeMonthLabel}`}
           helperClassName="text-emerald-700"
+        />
+        <ProgressMetricCard
+          icon={CalendarDays}
+          iconClassName="bg-blue-600/10 text-blue-600"
+          title="Years Tracked"
+          value={yearsTracked.toFixed(1)}
+          helper="of your journey"
+          helperClassName="text-blue-600"
         />
       </div>
       <div className="mt-3 grid min-w-0 gap-3 md:grid-cols-2 2xl:grid-cols-[minmax(0,2fr)_minmax(22rem,1fr)]">
