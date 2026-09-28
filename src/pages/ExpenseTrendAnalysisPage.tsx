@@ -204,7 +204,7 @@ export function ExpenseTrendAnalysisPage({
         />
         <TrendMetricCard
           icon={ChartLine}
-          iconClassName="bg-amber-500/12 text-amber-500"
+          iconClassName="bg-rose-500/12 text-rose-500"
           title={aggregationMode === 'year' ? 'Highest Year' : 'Highest Month'}
           amount={highestPeriod.totalExpenses}
           helper={highestPeriod.label}

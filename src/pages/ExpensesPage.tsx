@@ -29,6 +29,19 @@ const EXPENSES_STORAGE_KEY = 'growly-expenses-v1';
 const DEFAULT_MONTHLY_INCOME = 6000;
 const DEFAULT_TREND_MONTHS_BACK = 5;
 const DEFAULT_TREND_YEARS_BACK = 5;
+const CATEGORY_COLOR_PALETTE = [
+  '#1e3a8a',
+  '#1d4ed8',
+  '#2563eb',
+  '#3b82f6',
+  '#60a5fa',
+  '#6366f1',
+  '#4f46e5',
+  '#7c3aed',
+  '#8b5cf6',
+  '#a78bfa',
+  '#c4b5fd',
+] as const;
 
 export type ExpenseCategory = {
   id: string;
@@ -64,17 +77,17 @@ type MetricCardProps = {
 };
 
 const defaultCategories: ExpenseCategory[] = [
-  { id: 'rent', label: 'Rent', value: 1600, color: '#2563eb', kind: 'essential' },
-  { id: 'food', label: 'Food', value: 700, color: '#42ba85', kind: 'essential' },
-  { id: 'taxes', label: 'Taxes', value: 500, color: '#f59e0b', kind: 'essential' },
-  { id: 'insurance', label: 'Insurance', value: 350, color: '#a78bfa', kind: 'essential' },
-  { id: 'gas', label: 'Gas', value: 300, color: '#ff6b4a', kind: 'lifestyle' },
-  { id: 'electricity', label: 'Electricity', value: 250, color: '#22b8cf', kind: 'essential' },
-  { id: 'internet', label: 'Internet', value: 200, color: '#d8a1c4', kind: 'essential' },
-  { id: 'mobile', label: 'Mobile', value: 130, color: '#ddb44b', kind: 'lifestyle' },
-  { id: 'garage', label: 'Garage', value: 100, color: '#e6d34c', kind: 'lifestyle' },
-  { id: 'subscriptions', label: 'Subscriptions', value: 90, color: '#b39ddb', kind: 'lifestyle' },
-  { id: 'utilities', label: 'Utilities', value: 30, color: '#dbe3ef', kind: 'essential' },
+  { id: 'rent', label: 'Rent', value: 1600, color: CATEGORY_COLOR_PALETTE[0], kind: 'essential' },
+  { id: 'food', label: 'Food', value: 700, color: CATEGORY_COLOR_PALETTE[1], kind: 'essential' },
+  { id: 'taxes', label: 'Taxes', value: 500, color: CATEGORY_COLOR_PALETTE[2], kind: 'essential' },
+  { id: 'insurance', label: 'Insurance', value: 350, color: CATEGORY_COLOR_PALETTE[3], kind: 'essential' },
+  { id: 'gas', label: 'Gas', value: 300, color: CATEGORY_COLOR_PALETTE[4], kind: 'lifestyle' },
+  { id: 'electricity', label: 'Electricity', value: 250, color: CATEGORY_COLOR_PALETTE[5], kind: 'essential' },
+  { id: 'internet', label: 'Internet', value: 200, color: CATEGORY_COLOR_PALETTE[6], kind: 'essential' },
+  { id: 'mobile', label: 'Mobile', value: 130, color: CATEGORY_COLOR_PALETTE[7], kind: 'lifestyle' },
+  { id: 'garage', label: 'Garage', value: 100, color: CATEGORY_COLOR_PALETTE[8], kind: 'lifestyle' },
+  { id: 'subscriptions', label: 'Subscriptions', value: 90, color: CATEGORY_COLOR_PALETTE[9], kind: 'lifestyle' },
+  { id: 'utilities', label: 'Utilities', value: 30, color: CATEGORY_COLOR_PALETTE[10], kind: 'essential' },
 ];
 
 export function ExpensesPage({
@@ -193,7 +206,7 @@ export function ExpensesPage({
         id: buildCategoryId(label),
         label,
         value: Math.max(0, draftCategory.value),
-        color: getRandomCategoryColor(),
+        color: getCategoryColor(currentCategories.length),
         kind: 'lifestyle',
       },
     ]);
@@ -254,20 +267,20 @@ export function ExpensesPage({
             />
             <MetricCard
               icon={Star}
-              iconClassName="bg-amber-500/12 text-amber-500"
+              iconClassName="bg-red-500/12 text-red-600"
               title="Lifestyle Expenses"
               amount={lifestyleExpenses}
               helper={`${formatPercent(lifestyleExpenses, totalExpenses)} of total expenses`}
-              helperClassName="text-amber-500"
+              helperClassName="text-red-600"
               {...lifestyleExpensesTrend}
             />
             <MetricCard
               icon={TrendingUp}
-              iconClassName="bg-violet-500/12 text-violet-600"
+              iconClassName="bg-teal-500/12 text-teal-600"
               title="Monthly Savings Potential"
               amount={savingsPotential}
               helper={`${formatPercent(savingsPotential, monthlyIncome)} of net income`}
-              helperClassName="text-violet-600"
+              helperClassName="text-teal-600"
               {...savingsPotentialTrend}
             />
           </div>
@@ -281,7 +294,7 @@ export function ExpensesPage({
               </div>
               <div className="mt-auto grid gap-3 pt-3 sm:grid-cols-[minmax(0,1fr)_2.5rem] sm:items-center">
                 <div className="flex items-center gap-3 rounded-lg border border-slate-400/45 bg-slate-200/25 px-3 py-2 text-xs font-medium text-slate-700 shadow-inner shadow-white/40 backdrop-blur-md">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-500/12 text-amber-500">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-500/12 text-indigo-600">
                     <CalendarClock className="h-5 w-5" />
                   </span>
                   <p>
@@ -848,8 +861,8 @@ function ProgressRow({
 function TopCostDrivers({ drivers, totalExpenses }: { drivers: ExpenseCategory[]; totalExpenses: number }) {
   const rankColors = [
     'bg-blue-500/12 text-blue-600',
-    'bg-emerald-500/12 text-emerald-600',
-    'bg-amber-500/14 text-amber-600',
+    'bg-indigo-500/12 text-indigo-600',
+    'bg-violet-500/12 text-violet-600',
   ];
 
   return (
@@ -896,7 +909,7 @@ function ExpenseInsights({
         <InsightItem color="bg-violet-500/12 text-violet-600" icon={Home}>
           Rent represents <InsightValue>{formatPercent(rent, totalExpenses)}</InsightValue> of your total monthly expenses.
         </InsightItem>
-        <InsightItem color="bg-amber-500/12 text-amber-500" icon={Star}>
+        <InsightItem color="bg-rose-500/12 text-rose-600" icon={Star}>
           Insurance exceeds food costs by <InsightValue>{currency(Math.max(insurance - food, 0))} CHF</InsightValue>.
         </InsightItem>
         <InsightItem color="bg-cyan-500/12 text-cyan-600" icon={WalletCards}>
@@ -1016,7 +1029,11 @@ function mergeSavedExpenseCategories(savedCategories: unknown[]) {
     });
     const savedCustomCategories = savedCategories
       .filter((savedItem): savedItem is ExpenseCategory => isSavedExpenseCategory(savedItem) && !defaultCategoryIds.has(savedItem.id))
-      .map((category) => ({ ...category, value: Math.max(0, category.value) }));
+      .map((category, index) => ({
+        ...category,
+        color: getCategoryColor(defaultCategories.length + index),
+        value: Math.max(0, category.value),
+      }));
 
     return [...mergedDefaultCategories, ...savedCustomCategories];
   } catch {
@@ -1250,34 +1267,6 @@ function buildMetricTrend(currentValue: number, previousValue: number, betterWhe
   } satisfies Pick<MetricCardProps, 'trend' | 'trendDirection' | 'trendTone'>;
 }
 
-function getRandomCategoryColor() {
-  const hue = Math.floor(Math.random() * 360);
-  const saturation = 62 + Math.floor(Math.random() * 16);
-  const lightness = 48 + Math.floor(Math.random() * 10);
-
-  return hslToHex(hue, saturation, lightness);
-}
-
-function hslToHex(hue: number, saturation: number, lightness: number) {
-  const normalizedSaturation = saturation / 100;
-  const normalizedLightness = lightness / 100;
-  const chroma = (1 - Math.abs(2 * normalizedLightness - 1)) * normalizedSaturation;
-  const secondLargestComponent = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
-  const lightnessAdjustment = normalizedLightness - chroma / 2;
-  const [red, green, blue] =
-    hue < 60
-      ? [chroma, secondLargestComponent, 0]
-      : hue < 120
-        ? [secondLargestComponent, chroma, 0]
-        : hue < 180
-          ? [0, chroma, secondLargestComponent]
-          : hue < 240
-            ? [0, secondLargestComponent, chroma]
-            : hue < 300
-              ? [secondLargestComponent, 0, chroma]
-              : [chroma, 0, secondLargestComponent];
-
-  return `#${[red, green, blue]
-    .map((color) => Math.round((color + lightnessAdjustment) * 255).toString(16).padStart(2, '0'))
-    .join('')}`;
+function getCategoryColor(index: number) {
+  return CATEGORY_COLOR_PALETTE[index % CATEGORY_COLOR_PALETTE.length];
 }

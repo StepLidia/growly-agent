@@ -235,7 +235,7 @@ export function ProgressPage({
         />
         <ProgressMetricCard
           icon={TrendingUp}
-          iconClassName="bg-emerald-500/12 text-emerald-600"
+          iconClassName="bg-cyan-500/12 text-cyan-600"
           title={progressDelta >= 0 ? 'Ahead of Plan' : 'Behind Plan'}
           value={`${formatSignedCurrency(progressDelta)} CHF`}
           helper={`${formatSignedPercent(progressDeltaPercent)} vs plan`}
@@ -251,11 +251,11 @@ export function ProgressPage({
         />
         <ProgressMetricCard
           icon={Coins}
-          iconClassName="bg-amber-500/12 text-amber-500"
+          iconClassName="bg-emerald-700/12 text-emerald-700"
           title="Current Wealth"
           value={`${currency(currentWealth)} CHF`}
           helper={`as of ${activeMonthLabel}`}
-          helperClassName="text-amber-500"
+          helperClassName="text-emerald-700"
         />
       </div>
       <div className="mt-3 grid min-w-0 gap-3 md:grid-cols-2 2xl:grid-cols-[minmax(0,2fr)_minmax(22rem,1fr)]">
