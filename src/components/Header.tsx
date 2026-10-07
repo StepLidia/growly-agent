@@ -86,6 +86,11 @@ export function Header({
         <h1 className="text-3xl font-semibold tracking-normal text-slate-950">{title}</h1>
         <p className="mt-1 max-w-xs wrap-break-word text-sm text-slate-700 md:max-w-full">{subtitle}</p>
       </div>
+      {!showActions && extraActions && (
+        <div className="flex min-w-0 justify-end" data-pdf-exclude="true">
+          {extraActions}
+        </div>
+      )}
       {showActions && (
         <div className="flex flex-col items-start gap-1" data-pdf-exclude="true">
           <div className="flex flex-wrap items-center gap-2">

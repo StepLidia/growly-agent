@@ -14,8 +14,8 @@ export function PlanSelector({
   plans: PlanOption[];
   activePlanId: string;
   onPlanChange: (id: string) => void;
-  onCreatePlan: () => void;
-  onRenamePlan: (id: string, name: string) => void;
+  onCreatePlan?: () => void;
+  onRenamePlan?: (id: string, name: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -41,7 +41,7 @@ export function PlanSelector({
   }, [isOpen]);
 
   function saveName() {
-    if (editingId && draftName.trim()) {
+    if (onRenamePlan && editingId && draftName.trim()) {
       onRenamePlan(editingId, draftName);
       triggerRef.current?.focus();
       setEditingId(null);
@@ -50,14 +50,14 @@ export function PlanSelector({
 
   return (
     <div className="flex min-w-0 max-w-full items-center gap-2">
-      <button
+      {onCreatePlan && <button
         aria-label="Create a new plan"
         className={buttonClasses({ size: 'icon', className: 'shrink-0' })}
         type="button"
         onClick={onCreatePlan}
       >
         <Plus className="h-4 w-4" />
-      </button>
+      </button>}
       <div
         className="relative min-w-0"
         ref={containerRef}
@@ -154,7 +154,7 @@ export function PlanSelector({
                       <span className="min-w-0 flex-1 whitespace-nowrap" title={plan.name}>{plan.name}</span>
                       {plan.id === activePlanId && <Check className="h-4 w-4 shrink-0" />}
                     </button>
-                    <button
+                    {onRenamePlan && <button
                       aria-label={`Rename ${plan.name}`}
                       className="rounded-md p-2 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
                       type="button"
@@ -164,7 +164,7 @@ export function PlanSelector({
                       }}
                     >
                       <Pencil className="h-4 w-4" />
-                    </button>
+                    </button>}
                   </>
                 )}
               </div>

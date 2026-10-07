@@ -91,7 +91,7 @@ function SidebarContent({ isMobile = false, onNavigate }: SidebarProps & { isMob
         <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-blue-500/10 text-blue-600">
           <Footprints className="h-5 w-5" />
         </div>
-        <p className="mt-3 text-sm leading-5 text-slate-900">Small steps today create freedom tomorrow.</p>
+        <p className="mt-3 text-sm leading-5 text-slate-900">Small steps today create freedom tomorrow</p>
         <svg viewBox="0 0 180 58" className="mt-2 h-10 w-full text-violet-500" aria-hidden="true">
           <path d="M2 50 C24 35,30 62,48 45 S78 42,90 33 S124 8,142 24 S165 31,178 14" fill="none" stroke="currentColor" strokeWidth="2" />
         </svg>

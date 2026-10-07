@@ -134,6 +134,10 @@ export function Dashboard() {
     }));
   }
 
+  function selectPlan(id: string) {
+    setPlansState((state) => state.plans.some((plan) => plan.id === id) ? { ...state, activePlanId: id } : state);
+  }
+
   async function handleExportPdf() {
     if (isExporting) {
       return;
@@ -234,7 +238,7 @@ export function Dashboard() {
                   <DetailsPage
                     plans={plansState.plans}
                     activePlanId={activePlan.id}
-                    onPlanChange={(id) => setPlansState((state) => ({ ...state, activePlanId: id }))}
+                    onPlanChange={selectPlan}
                     onCreatePlan={createPlan}
                     onRenamePlan={renamePlan}
                     dashboard={dashboard}
@@ -256,6 +260,8 @@ export function Dashboard() {
                 path="/progress"
                 element={
                   <ProgressPage
+                    plans={plansState.plans}
+                    onPlanChange={selectPlan}
                     assets={assets}
                     projectionYears={projectionYears}
                     planId={activePlan.id}

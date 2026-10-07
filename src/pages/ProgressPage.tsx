@@ -51,6 +51,7 @@ import {
 import { hoverTooltipClasses, tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency, type FinancialAsset } from '../finance';
 import { Header } from '../components/Header';
+import { PlanSelector } from '../components/PlanSelector';
 import { MonthPicker } from '../components/MonthPicker';
 import { YearPicker } from '../components/YearPicker';
 import { useEditableNumber } from '../hooks/useEditableNumber';
@@ -106,12 +107,16 @@ export function ProgressPage({
   planId,
   planName,
   initialPlan,
+  plans,
+  onPlanChange,
 }: {
   assets: FinancialAsset[];
   projectionYears: number;
   planId: string;
   planName: string;
   initialPlan: DashboardPlan;
+  plans: DashboardPlan[];
+  onPlanChange: (id: string) => void;
 }) {
   const [savedProgress] = useState(() => readProgressStorage(browserProgressStorage, initialPlan.id, initialPlan.assets));
   const [settings, setSettings] = useState(savedProgress.settings);
@@ -224,6 +229,7 @@ export function ProgressPage({
   return (
     <>
       <Header
+        extraActions={<PlanSelector plans={plans} activePlanId={planId} onPlanChange={onPlanChange} />}
         title="Wealth progress"
         subtitle={`Track your actual wealth over time and compare it to ${planName}`}
         showActions={false}
