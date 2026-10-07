@@ -9,6 +9,8 @@ import { InsightsCard } from '../components/InsightsCard';
 import { ProjectionCard } from '../components/ProjectionCard';
 import { SummaryCard } from '../components/SummaryCard';
 
+const MAX_PROJECTION_YEARS = 80;
+
 type DetailsPageProps = {
   dashboard: ReturnType<typeof calculateDashboard>;
   importStatus: string;
@@ -113,7 +115,7 @@ export function DetailsPage({
 }
 
 function YearsSlider({ value, onChange }: { value: number; onChange: (value: number) => void }) {
-  const percent = getPercent(value, 40);
+  const percent = getPercent(value, MAX_PROJECTION_YEARS);
 
   return (
     <section className="glass-panel mt-3 px-5 py-4">
@@ -129,7 +131,7 @@ function YearsSlider({ value, onChange }: { value: number; onChange: (value: num
           <input
             aria-label="Projection years"
             className="years-slider"
-            max={40}
+            max={MAX_PROJECTION_YEARS}
             min={0}
             step={1}
             style={{ '--slider-progress': `${percent}%` } as CSSProperties}
@@ -137,7 +139,7 @@ function YearsSlider({ value, onChange }: { value: number; onChange: (value: num
             value={value}
             onChange={(event) => onChange(Number(event.currentTarget.value))}
           />
-          <span className="text-sm font-bold text-slate-500">40</span>
+          <span className="text-sm font-bold text-slate-500">{MAX_PROJECTION_YEARS}</span>
         </div>
       </div>
     </section>

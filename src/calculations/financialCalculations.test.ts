@@ -124,4 +124,26 @@ describe('financial calculations', () => {
     expect(dashboard.zeroReturnPensionProjection[3].value).toBeCloseTo(11500, 3);
     expect(dashboard.zeroReturnSavingsInvestmentProjection[3].value).toBeCloseTo(13800, 3);
   });
+
+  it('projects all wealth series through the 80-year horizon', () => {
+    const assets = testAssets.map((asset) => ({ ...asset, annualReturn: 0 }));
+    const dashboard = calculateDashboard(assets, testIncome, 80);
+    const series = [
+      dashboard.totalProjection,
+      dashboard.pensionProjection,
+      dashboard.savingsInvestmentProjection,
+      dashboard.zeroReturnTotalProjection,
+      dashboard.zeroReturnPensionProjection,
+      dashboard.zeroReturnSavingsInvestmentProjection,
+    ];
+
+    for (const points of series) {
+      expect(points).toHaveLength(81);
+      expect(points.at(-1)?.year).toBe(80);
+    }
+
+    expect(dashboard.totalWealth).toBe(418000);
+    expect(dashboard.pensionWealth).toBe(127000);
+    expect(dashboard.liquidWealth).toBe(291000);
+  });
 });
