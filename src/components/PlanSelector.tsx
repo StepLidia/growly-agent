@@ -93,7 +93,7 @@ export function PlanSelector({
             setEditingId(null);
           }}
         >
-          <span className="grid min-w-0">
+          <span className="grid min-w-0 font-normal">
             {plans.map((plan) => (
               <span key={plan.id} aria-hidden="true" className="invisible col-start-1 row-start-1 truncate">
                 {plan.name}
@@ -108,7 +108,7 @@ export function PlanSelector({
             id="details-plan-picker"
             role="dialog"
             aria-label="Plans"
-            className="absolute left-0 top-12 z-40 max-h-80 min-w-full w-max overflow-y-auto rounded-lg border border-slate-300/30 bg-white/95 p-2 text-sm font-bold text-slate-700 shadow-xl shadow-slate-400/20 backdrop-blur-xl"
+            className="absolute left-0 top-12 z-40 max-h-80 min-w-full w-max overflow-y-auto rounded-lg border border-slate-300/30 bg-white/95 p-2 text-sm font-medium text-slate-700 shadow-xl shadow-slate-400/20 backdrop-blur-xl"
           >
             {plans.map((plan) => (
               <div key={plan.id} className="flex items-center gap-1">
@@ -123,7 +123,7 @@ export function PlanSelector({
                     <input
                       autoFocus
                       aria-label={`Name for ${plan.name}`}
-                      className="glass-input min-w-0 flex-1 px-2 py-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
+                      className="glass-input min-w-0 flex-1 px-2 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
                       maxLength={80}
                       size={1}
                       required
