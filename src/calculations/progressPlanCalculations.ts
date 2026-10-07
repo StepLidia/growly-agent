@@ -4,6 +4,10 @@ import { calculateTotalBalance, findLatestProgressRecordOnOrBefore } from './pro
 
 export type ProgressBaseline = ProgressStart & { balances: Record<string, number>; totalWealth: number };
 
+export function getPlanProjectionBalances(assets: FinancialAsset[]): Record<string, number> {
+  return Object.fromEntries(assets.map(({ id, amount }) => [id, Math.max(0, amount)]));
+}
+
 export function buildPlanProgressBaseline(
   start: ProgressStart | undefined,
   records: SavedProgressMonthlyRecords,

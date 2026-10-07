@@ -1,6 +1,6 @@
 import type { FinancialAsset } from '../finance';
 import type { ProgressSettings, SavedProgressMonthlyRecords } from '../storage/progressStorage';
-import { buildPlanProgressBaseline, buildSharedProgressAssets } from './progressPlanCalculations';
+import { buildPlanProgressBaseline, buildSharedProgressAssets, getPlanProjectionBalances } from './progressPlanCalculations';
 import {
   buildProgressChartData,
   calculateCurrentWealth,
@@ -38,8 +38,8 @@ export function calculateOverviewProgress({
       })),
     ],
     baselineDate: baseline ? new Date(baseline.recordedAt) : currentDate,
-    baselineBalances: baseline?.balances ?? currentBalances,
-    optimisticAssets: currentAssets,
+    baselineBalances: getPlanProjectionBalances(assets),
+    optimisticAssets: assets,
     projectionYears,
   });
   const targetWealth = progressChartData.at(-1)?.plannedWealth ?? totalCurrentWealth;

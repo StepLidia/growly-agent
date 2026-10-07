@@ -54,7 +54,7 @@ import { Header } from '../components/Header';
 import { MonthPicker } from '../components/MonthPicker';
 import { YearPicker } from '../components/YearPicker';
 import { useEditableNumber } from '../hooks/useEditableNumber';
-import { buildPlanProgressBaseline, buildSharedProgressAssets, type ProgressBaseline } from '../calculations/progressPlanCalculations';
+import { buildPlanProgressBaseline, buildSharedProgressAssets, getPlanProjectionBalances, type ProgressBaseline } from '../calculations/progressPlanCalculations';
 import { browserProgressStorage, readProgressStorage, saveProgressSettings, saveProgressMonthlyRecords, type ProgressMonthlyRecord, type ProgressStart, type SavedProgressMonthlyRecords } from '../storage/progressStorage';
 import type { DashboardPlan } from '../storage/dashboardPlans';
 
@@ -134,13 +134,13 @@ export function ProgressPage({
   const currentMonthLabel = formatProgressMonth(currentDate);
   const activeMonthLabel = activeMonthlyRecord?.monthLabel ?? currentMonthLabel;
   const currentWealth = calculateCurrentWealth(currentAssets);
-  const activeBaselineBalances = baseline?.balances ?? getProgressAssetBalances(currentAssets);
+  const planProjectionBalances = getPlanProjectionBalances(assets);
   const monthsTracked = baseline ? calculateMonthsTracked(new Date(baseline.recordedAt), currentDate) : 0;
   const yearsTracked = calculateYearsTracked(monthsTracked);
   const plannedWealth = baseline
     ? calculateProjectedPlannedWealth({
-      assets: currentAssets,
-      baselineBalances: activeBaselineBalances,
+      assets,
+      baselineBalances: planProjectionBalances,
       monthsTracked,
     })
     : currentWealth;
@@ -154,14 +154,14 @@ export function ProgressPage({
       monthlyRecords,
     }),
     baselineDate: baseline ? new Date(baseline.recordedAt) : currentDate,
-    baselineBalances: activeBaselineBalances,
-    optimisticAssets: currentAssets,
+    baselineBalances: planProjectionBalances,
+    optimisticAssets: assets,
     projectionYears,
   });
   const progressVarianceCharts = buildProgressVarianceCharts({
-    assets: currentAssets,
+    assets,
     baselineDate: baseline ? new Date(baseline.recordedAt) : currentDate,
-    baselineBalances: activeBaselineBalances,
+    baselineBalances: planProjectionBalances,
     records: Object.values(monthlyRecords),
   });
 
@@ -281,7 +281,7 @@ export function ProgressPage({
         />
         <ProgressAssetTargetBarsCard
           assets={currentAssets}
-          baselineBalances={activeBaselineBalances}
+          baselineBalances={planProjectionBalances}
           projectionYears={projectionYears}
         />
       </div>
@@ -376,8 +376,8 @@ function BaselineCard({
           )}
         </div>
       </div>
-      <p className="mt-4 max-w-xs wrap-break-word text-sm leading-6 text-slate-700">
-        Your asset values of this month are used as the starting point for progress tracking.
+      <p className="mt-4 max-w-xs wrap-break-word text-xs leading-6 text-slate-700">
+        Your plan's starting amounts are projected from this month and compared with your recorded balances.
       </p>
     </section>
   );

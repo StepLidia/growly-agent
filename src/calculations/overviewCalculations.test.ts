@@ -22,16 +22,16 @@ const input = {
 };
 
 describe('overview progress', () => {
-  it('uses the selected plan baseline while keeping current wealth shared', () => {
+  it('keeps the plan target independent of its start date and current wealth shared', () => {
     const planA = calculateOverviewProgress(input);
     const planB = calculateOverviewProgress({ ...input, planId: 'plan-b' });
 
     expect(planA.totalCurrentWealth).toBe(2000);
     expect(planB.totalCurrentWealth).toBe(2000);
-    expect(planA.targetWealth).toBe(1120);
-    expect(planB.targetWealth).toBe(2120);
-    expect(planA.currentWealthProgressPercent).toBeCloseTo(2000 / 1120 * 100);
-    expect(planB.currentWealthProgressPercent).toBeCloseTo(2000 / 2120 * 100);
+    expect(planA.targetWealth).toBe(100119);
+    expect(planB.targetWealth).toBe(100119);
+    expect(planA.currentWealthProgressPercent).toBeCloseTo(2000 / 100119 * 100);
+    expect(planB.currentWealthProgressPercent).toBeCloseTo(2000 / 100119 * 100);
   });
 
   it('uses the selected plan returns, contributions, and horizon for the target', () => {
@@ -39,11 +39,11 @@ describe('overview progress', () => {
       ...input,
       planId: 'plan-b',
       projectionYears: 2,
-      assets: [{ ...input.assets[0], amount: 0, annualReturn: 10, monthlyContribution: 0 }],
+      assets: [{ ...input.assets[0], amount: 3000, annualReturn: 10, monthlyContribution: 0 }],
     });
 
     expect(result.totalCurrentWealth).toBe(2000);
-    expect(result.targetWealth).toBeCloseTo(2420);
+    expect(result.targetWealth).toBeCloseTo(3630);
   });
 
   it('uses the latest earlier balance and ignores future records for current wealth', () => {
@@ -56,30 +56,30 @@ describe('overview progress', () => {
     });
 
     expect(result.totalCurrentWealth).toBe(2000);
-    expect(result.targetWealth).toBe(1120);
+    expect(result.targetWealth).toBe(100119);
   });
 
-  it('projects an untracked plan from current shared balances', () => {
+  it('projects an untracked plan from its input amounts', () => {
     const result = calculateOverviewProgress({ ...input, planId: 'new-plan' });
 
     expect(result.totalCurrentWealth).toBe(2000);
-    expect(result.targetWealth).toBe(2120);
+    expect(result.targetWealth).toBe(100119);
   });
 
   it('uses shared initial balances when no monthly history exists', () => {
     const result = calculateOverviewProgress({ ...input, monthlyRecords: {} });
 
     expect(result.totalCurrentWealth).toBe(100);
-    expect(result.targetWealth).toBe(220);
+    expect(result.targetWealth).toBe(100119);
   });
 
-  it('updates baseline-based targets after a shared historical balance is edited', () => {
+  it('keeps plan targets unchanged after a shared historical balance is edited', () => {
     const result = calculateOverviewProgress({
       ...input,
       monthlyRecords: { ...monthlyRecords, '2026-01': { ...january, balances: { savings: 1500 } } },
     });
 
     expect(result.totalCurrentWealth).toBe(2000);
-    expect(result.targetWealth).toBe(1620);
+    expect(result.targetWealth).toBe(100119);
   });
 });

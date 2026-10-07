@@ -1,3 +1,5 @@
+import { futureValue } from './financialCalculations';
+
 export type ProgressAsset = {
   amount: number;
   monthlyContribution: number;
@@ -540,16 +542,7 @@ function calculateAssetProjectionValue({
   principal: number;
   years: number;
 }) {
-  const safeYears = Math.max(0, Math.round(years));
-  const yearlyRate = annualReturnPercent / 100;
-  const yearlyContribution = Math.max(0, monthlyContribution) * 12;
-  let value = Math.max(0, principal);
-
-  for (let year = 0; year < safeYears; year += 1) {
-    value = value * (1 + yearlyRate) + yearlyContribution;
-  }
-
-  return value;
+  return futureValue(principal, annualReturnPercent, years, monthlyContribution);
 }
 
 function shouldBoostOptimisticReturn(assetId: string) {
