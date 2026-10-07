@@ -1,43 +1,18 @@
 import { CalendarDays, Leaf, PiggyBank, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import {
-  buildProgressChartData,
-  calculateCurrentWealth,
-  calculateProgressTargetPercent,
-  calculateTotalBalance,
-} from '../calculations/progressCalculations';
-import { type calculateDashboard, type FinancialAsset } from '../finance';
+import { calculateOverviewProgress } from '../calculations/overviewCalculations';
+import { type calculateDashboard } from '../finance';
+import type { DashboardPlan } from '../storage/dashboardPlans';
+import { browserProgressStorage, readProgressStorage } from '../storage/progressStorage';
 
 type OverviewPageProps = {
   backgroundImagePath?: string;
   dashboard: ReturnType<typeof calculateDashboard>;
   projectionYears: number;
+  planId: string;
+  initialPlan: DashboardPlan;
   showDecorativeImages?: boolean;
 };
-
-type ProgressBaseline = {
-  balances: Record<string, number>;
-  monthLabel: string;
-  recordedAt: string;
-  totalWealth: number;
-};
-
-type ProgressMonth = {
-  key: string;
-  label: string;
-  shortLabel: string;
-};
-
-type ProgressMonthlyRecord = {
-  monthLabel: string;
-  recordedAt: string;
-  balances: Record<string, number>;
-};
-
-type SavedProgressMonthlyRecords = Record<string, ProgressMonthlyRecord>;
-
-const PROGRESS_BASELINE_STORAGE_KEY = 'growly-progress-baseline-v1';
-const PROGRESS_MONTHLY_RECORD_STORAGE_KEY = 'growly-progress-monthly-record-v1';
 
 const overviewCardStyles = [
   {
@@ -90,30 +65,20 @@ export function OverviewPage({
   backgroundImagePath = '/images/background.webp',
   dashboard,
   projectionYears,
+  planId,
+  initialPlan,
   showDecorativeImages = true,
 }: OverviewPageProps) {
   const currentDate = new Date();
-  const currentProgressMonth = getProgressMonthFromDate(currentDate);
-  const baseline = readSavedProgressBaseline();
-  const monthlyRecords = readSavedProgressMonthlyRecords();
-  const monthlyRecord = monthlyRecords[currentProgressMonth.key] ?? null;
-  const currentAssets = getProgressCurrentAssets(dashboard.assets, monthlyRecord);
-  const totalCurrentWealth = calculateCurrentWealth(currentAssets);
-  const activeBaselineBalances = baseline?.balances ?? getProgressAssetBalances(currentAssets);
-  const progressChartData = buildProgressChartData({
-    actualPoints: getProgressActualPoints({
-      baseline,
-      currentDate,
-      currentWealth: totalCurrentWealth,
-      monthlyRecords,
-    }),
-    baselineDate: baseline ? new Date(baseline.recordedAt) : currentDate,
-    baselineBalances: activeBaselineBalances,
-    optimisticAssets: currentAssets,
+  const { settings, monthlyRecords } = readProgressStorage(browserProgressStorage, initialPlan.id, initialPlan.assets);
+  const { totalCurrentWealth, targetWealth, currentWealthProgressPercent } = calculateOverviewProgress({
+    assets: dashboard.assets,
     projectionYears,
+    planId,
+    settings,
+    monthlyRecords,
+    currentDate,
   });
-  const targetWealth = progressChartData.at(-1)?.plannedWealth ?? totalCurrentWealth;
-  const currentWealthProgressPercent = calculateProgressTargetPercent(totalCurrentWealth, targetWealth);
   const monthlyFutureBuilding =
     dashboard.income.savingsContribution + dashboard.income.investmentContribution + dashboard.income.pillar3Contribution;
   const cards = [
@@ -266,148 +231,4 @@ function CurrentWealthProgressRing({
 
 function formatMoney(value: number) {
   return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(value))} CHF`;
-}
-
-function readSavedProgressBaseline(): ProgressBaseline | null {
-  try {
-    const savedValue = window.localStorage.getItem(PROGRESS_BASELINE_STORAGE_KEY);
-    const baseline = savedValue ? JSON.parse(savedValue) : null;
-
-    return isProgressBaseline(baseline) ? baseline : null;
-  } catch {
-    return null;
-  }
-}
-
-function readSavedProgressMonthlyRecords(): SavedProgressMonthlyRecords {
-  try {
-    const savedValue = window.localStorage.getItem(PROGRESS_MONTHLY_RECORD_STORAGE_KEY);
-    const records = savedValue ? JSON.parse(savedValue) : null;
-
-    if (isProgressMonthlyRecord(records)) {
-      return {
-        [getProgressMonthFromDate(new Date(records.recordedAt)).key]: records,
-      };
-    }
-
-    return isSavedProgressMonthlyRecords(records) ? records : {};
-  } catch {
-    return {};
-  }
-}
-
-function getProgressCurrentAssets(assets: FinancialAsset[], monthlyRecord: ProgressMonthlyRecord | null) {
-  if (!monthlyRecord) {
-    return assets;
-  }
-
-  return assets.map((asset) => ({
-    ...asset,
-    amount: getSavedProgressBalance(monthlyRecord.balances[asset.id], asset.amount),
-  }));
-}
-
-function getProgressAssetBalances(assets: FinancialAsset[]) {
-  return Object.fromEntries(assets.map((asset) => [asset.id, Math.max(0, asset.amount)]));
-}
-
-function getProgressActualPoints({
-  baseline,
-  currentDate,
-  currentWealth,
-  monthlyRecords,
-}: {
-  baseline: ProgressBaseline | null;
-  currentDate: Date;
-  currentWealth: number;
-  monthlyRecords: SavedProgressMonthlyRecords;
-}) {
-  const actualPoints = [
-    {
-      date: baseline ? new Date(baseline.recordedAt) : currentDate,
-      totalWealth: baseline?.totalWealth ?? currentWealth,
-    },
-  ];
-
-  Object.values(monthlyRecords).forEach((monthlyRecord) => {
-    actualPoints.push({
-      date: new Date(monthlyRecord.recordedAt),
-      totalWealth: calculateTotalBalance(monthlyRecord.balances),
-    });
-  });
-
-  return actualPoints;
-}
-
-function getSavedProgressBalance(value: unknown, fallback: number) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-}
-
-function getProgressMonthFromDate(date: Date) {
-  return buildProgressMonth(date.getFullYear(), date.getMonth());
-}
-
-function buildProgressMonth(year: number, monthIndex: number): ProgressMonth {
-  const date = new Date(year, monthIndex, 1);
-
-  return {
-    key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-    label: formatProgressMonth(date),
-    shortLabel: date.toLocaleDateString('en-US', {
-      month: 'short',
-    }),
-  };
-}
-
-function formatProgressMonth(date: Date) {
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-function isProgressBaseline(value: unknown): value is ProgressBaseline {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const baseline = value as Partial<ProgressBaseline>;
-
-  return (
-    typeof baseline.monthLabel === 'string' &&
-    typeof baseline.recordedAt === 'string' &&
-    typeof baseline.totalWealth === 'number' &&
-    Number.isFinite(baseline.totalWealth) &&
-    isProgressBalanceRecord(baseline.balances)
-  );
-}
-
-function isProgressMonthlyRecord(value: unknown): value is ProgressMonthlyRecord {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const record = value as Partial<ProgressMonthlyRecord>;
-
-  return (
-    typeof record.monthLabel === 'string' &&
-    typeof record.recordedAt === 'string' &&
-    isProgressBalanceRecord(record.balances)
-  );
-}
-
-function isSavedProgressMonthlyRecords(value: unknown): value is SavedProgressMonthlyRecords {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  return Object.values(value).every(isProgressMonthlyRecord);
-}
-
-function isProgressBalanceRecord(value: unknown): value is Record<string, number> {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  return Object.values(value).every((balance) => typeof balance === 'number' && Number.isFinite(balance));
 }

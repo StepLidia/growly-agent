@@ -210,6 +210,8 @@ export function Dashboard() {
                 path="/"
                 element={
                   <LandingPage
+                    planId={activePlan.id}
+                    initialPlan={plansState.plans[0]}
                     dashboard={dashboard}
                     projectionYears={projectionYears}
                   />
@@ -219,6 +221,8 @@ export function Dashboard() {
                 path="/overview-private-lidia"
                 element={
                   <OverviewPage
+                    planId={activePlan.id}
+                    initialPlan={plansState.plans[0]}
                     dashboard={dashboard}
                     projectionYears={projectionYears}
                   />
