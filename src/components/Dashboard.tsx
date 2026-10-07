@@ -248,7 +248,18 @@ export function Dashboard() {
                   />
                 }
               />
-              <Route path="/progress" element={<ProgressPage assets={assets} projectionYears={projectionYears} />} />
+              <Route
+                path="/progress"
+                element={
+                  <ProgressPage
+                    assets={assets}
+                    projectionYears={projectionYears}
+                    planId={activePlan.id}
+                    planName={activePlan.name}
+                    initialPlan={plansState.plans[0]}
+                  />
+                }
+              />
               <Route
                 path="/expenses"
                 element={
