@@ -8,10 +8,17 @@ import { IncomeCard } from '../components/IncomeCard';
 import { InsightsCard } from '../components/InsightsCard';
 import { ProjectionCard } from '../components/ProjectionCard';
 import { SummaryCard } from '../components/SummaryCard';
+import { PlanSelector } from '../components/PlanSelector';
+import type { DashboardPlan } from '../storage/dashboardPlans';
 
 const MAX_PROJECTION_YEARS = 80;
 
 type DetailsPageProps = {
+  plans: DashboardPlan[];
+  activePlanId: string;
+  onPlanChange: (id: string) => void;
+  onCreatePlan: () => void;
+  onRenamePlan: (id: string, name: string) => void;
   dashboard: ReturnType<typeof calculateDashboard>;
   importStatus: string;
   importStatusTone: 'error' | 'success';
@@ -31,6 +38,11 @@ type DetailsPageProps = {
 };
 
 export function DetailsPage({
+  plans,
+  activePlanId,
+  onPlanChange,
+  onCreatePlan,
+  onRenamePlan,
   dashboard,
   importStatus,
   importStatusTone,
@@ -47,6 +59,15 @@ export function DetailsPage({
   return (
     <>
       <Header
+        extraActions={
+          <PlanSelector
+            plans={plans}
+            activePlanId={activePlanId}
+            onPlanChange={onPlanChange}
+            onCreatePlan={onCreatePlan}
+            onRenamePlan={onRenamePlan}
+          />
+        }
         title="Details"
         subtitle="State of your financial situation"
         importStatus={importStatus}
@@ -59,12 +80,13 @@ export function DetailsPage({
       />
       <div className="mt-4 grid min-w-0 gap-3 md:grid-cols-2 2xl:grid-cols-4">
         {dashboard.assets.map((asset) => (
-          <AssetCard key={asset.id} asset={asset} onChange={onAssetChange} />
+          <AssetCard key={`${activePlanId}-${asset.id}`} asset={asset} onChange={onAssetChange} />
         ))}
       </div>
       <div className="mt-3 grid min-w-0 items-stretch gap-3 xl:grid-cols-4">
         <div className="h-full xl:col-span-2">
           <IncomeCard
+            key={activePlanId}
             income={dashboard.income}
             futureBuildingPercent={dashboard.futureBuildingPercent}
             onChange={onIncomeChange}

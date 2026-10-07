@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Menu } from 'lucide-react';
-import { assets as initialAssets, calculateDashboard, incomePlan, type AssetKind, type FinancialAsset, type IncomePlan } from '../finance';
+import { calculateDashboard, type AssetKind, type FinancialAsset, type IncomePlan } from '../finance';
 import { buttonClasses } from '../constants/buttonStyles';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { MobileSidebarDrawer, Sidebar } from './Sidebar';
@@ -8,8 +8,8 @@ import { tooltipClasses } from '../constants/tooltipStyles';
 import { LandingPage } from '../pages/LandingPage';
 import { OverviewPage } from '../pages/OverviewPage';
 import { downloadLocalStorageBackup, importLocalStorageBackup } from '../storage/localStorageBackup';
+import { createBlankDashboardPlan, readDashboardPlans, saveDashboardPlans, updateActiveDashboardPlan } from '../storage/dashboardPlans';
 
-const DASHBOARD_STORAGE_KEY = 'growly-dashboard-inputs-v1';
 const CarPage = lazy(() => import('../pages/CarPage').then((module) => ({ default: module.CarPage })));
 const ContactPage = lazy(() => import('../pages/ContactPage').then((module) => ({ default: module.ContactPage })));
 const DetailsPage = lazy(() => import('../pages/DetailsPage').then((module) => ({ default: module.DetailsPage })));
@@ -17,18 +17,11 @@ const ExpensesPage = lazy(() => import('../pages/ExpensesPage').then((module) =>
 const MortgagePage = lazy(() => import('../pages/MortgagePage').then((module) => ({ default: module.MortgagePage })));
 const ProgressPage = lazy(() => import('../pages/ProgressPage').then((module) => ({ default: module.ProgressPage })));
 
-type SavedDashboardInputs = {
-  assets?: Partial<Record<AssetKind, Partial<Pick<FinancialAsset, 'amount' | 'monthlyContribution' | 'annualReturn'>>>>;
-  income?: Partial<Pick<IncomePlan, 'monthlyNetIncome'>>;
-  projectionYears?: number;
-};
-
 export function Dashboard() {
   const navigate = useNavigate();
-  const savedInputs = useMemo(readSavedDashboardInputs, []);
-  const [assets, setAssets] = useState<FinancialAsset[]>(() => mergeSavedAssets(savedInputs.assets));
-  const [income, setIncome] = useState<IncomePlan>(() => mergeSavedIncome(savedInputs.income));
-  const [projectionYears, setProjectionYears] = useState(() => getSavedNumber(savedInputs.projectionYears, 30));
+  const [plansState, setPlansState] = useState(readDashboardPlans);
+  const activePlan = plansState.plans.find(({ id }) => id === plansState.activePlanId) ?? plansState.plans[0];
+  const { assets, income, projectionYears } = activePlan;
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState('');
@@ -37,8 +30,8 @@ export function Dashboard() {
   const dashboard = useMemo(() => calculateDashboard(assets, income, projectionYears), [assets, income, projectionYears]);
 
   useEffect(() => {
-    saveDashboardInputs({ assets, income, projectionYears });
-  }, [assets, income, projectionYears]);
+    saveDashboardPlans(plansState);
+  }, [plansState]);
 
   useEffect(() => {
     if (!importStatus) {
@@ -102,13 +95,43 @@ export function Dashboard() {
     field: keyof Pick<FinancialAsset, 'amount' | 'monthlyContribution' | 'annualReturn'>,
     value: number,
   ) {
-    setAssets((currentAssets) =>
-      currentAssets.map((asset) => (asset.id === id ? { ...asset, [field]: value } : asset)),
-    );
+    setPlansState((state) => updateActiveDashboardPlan(state, (plan) => ({
+      ...plan,
+      assets: plan.assets.map((asset) => asset.id === id ? { ...asset, [field]: value } : asset),
+    })));
   }
 
   function updateIncome(field: keyof Pick<IncomePlan, 'monthlyNetIncome'>, value: number) {
-    setIncome((currentIncome) => ({ ...currentIncome, [field]: value }));
+    setPlansState((state) => updateActiveDashboardPlan(state, (plan) => ({
+      ...plan, income: { ...plan.income, [field]: value },
+    })));
+  }
+
+  function updateProjectionYears(value: number) {
+    setPlansState((state) => updateActiveDashboardPlan(state, (plan) => ({ ...plan, projectionYears: value })));
+  }
+
+  function createPlan() {
+    const id = crypto.randomUUID();
+    setPlansState((state) => {
+      let index = 0;
+      let name = 'Plan A';
+      while (state.plans.some((plan) => plan.name === name)) {
+        index += 1;
+        name = `Plan ${index < 26 ? String.fromCharCode(65 + index) : index + 1}`;
+      }
+      return { activePlanId: id, plans: [...state.plans, createBlankDashboardPlan(id, name)] };
+    });
+  }
+
+  function renamePlan(id: string, name: string) {
+    if (!name.trim()) {
+      return;
+    }
+    setPlansState((state) => ({
+      ...state,
+      plans: state.plans.map((plan) => plan.id === id ? { ...plan, name: name.trim() } : plan),
+    }));
   }
 
   async function handleExportPdf() {
@@ -152,11 +175,7 @@ export function Dashboard() {
 
     try {
       importLocalStorageBackup(window.localStorage, await file.text());
-      const nextSavedInputs = readSavedDashboardInputs();
-
-      setAssets(mergeSavedAssets(nextSavedInputs.assets));
-      setIncome(mergeSavedIncome(nextSavedInputs.income));
-      setProjectionYears(getSavedNumber(nextSavedInputs.projectionYears, 30));
+      setPlansState(readDashboardPlans());
       setImportStatusTone('success');
       setImportStatus('Import successful. All data was restored.');
     } catch {
@@ -209,6 +228,11 @@ export function Dashboard() {
                 path="/details"
                 element={
                   <DetailsPage
+                    plans={plansState.plans}
+                    activePlanId={activePlan.id}
+                    onPlanChange={(id) => setPlansState((state) => ({ ...state, activePlanId: id }))}
+                    onCreatePlan={createPlan}
+                    onRenamePlan={renamePlan}
                     dashboard={dashboard}
                     importStatus={importStatus}
                     importStatusTone={importStatusTone}
@@ -220,7 +244,7 @@ export function Dashboard() {
                     onExportPdf={handleExportPdf}
                     onImportJsonBackup={handleImportJsonBackup}
                     onIncomeChange={updateIncome}
-                    onProjectionYearsChange={setProjectionYears}
+                    onProjectionYearsChange={updateProjectionYears}
                   />
                 }
               />
@@ -272,73 +296,6 @@ function RouteLoadingState() {
       Loading...
     </section>
   );
-}
-
-function readSavedDashboardInputs(): SavedDashboardInputs {
-  try {
-    const savedValue = window.localStorage.getItem(DASHBOARD_STORAGE_KEY);
-    return savedValue ? JSON.parse(savedValue) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveDashboardInputs({
-  assets,
-  income,
-  projectionYears,
-}: {
-  assets: FinancialAsset[];
-  income: IncomePlan;
-  projectionYears: number;
-}) {
-  try {
-    window.localStorage.setItem(
-      DASHBOARD_STORAGE_KEY,
-      JSON.stringify({
-        assets: Object.fromEntries(
-          assets.map((asset) => [
-            asset.id,
-            {
-              amount: asset.amount,
-              monthlyContribution: asset.monthlyContribution,
-              annualReturn: asset.annualReturn,
-            },
-          ]),
-        ),
-        income: {
-          monthlyNetIncome: income.monthlyNetIncome,
-        },
-        projectionYears,
-      } satisfies SavedDashboardInputs),
-    );
-  } catch {
-    // Ignore storage failures so the calculator remains usable in private or restricted browser modes.
-  }
-}
-
-function mergeSavedAssets(savedAssets: SavedDashboardInputs['assets']) {
-  return initialAssets.map((asset) => {
-    const savedAsset = savedAssets?.[asset.id];
-
-    return {
-      ...asset,
-      amount: getSavedNumber(savedAsset?.amount, asset.amount),
-      monthlyContribution: getSavedNumber(savedAsset?.monthlyContribution, asset.monthlyContribution),
-      annualReturn: getSavedNumber(savedAsset?.annualReturn, asset.annualReturn),
-    };
-  });
-}
-
-function mergeSavedIncome(savedIncome: SavedDashboardInputs['income']) {
-  return {
-    ...incomePlan,
-    monthlyNetIncome: getSavedNumber(savedIncome?.monthlyNetIncome, incomePlan.monthlyNetIncome),
-  };
-}
-
-function getSavedNumber(value: unknown, fallback: number) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 function Footer() {

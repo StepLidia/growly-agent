@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { ChevronDown, CircleHelp, Download, FileJson, FileText, Upload } from 'lucide-react';
 import { buttonClasses } from '../constants/buttonStyles';
 
 export function Header({
+  extraActions,
   importStatus,
   importStatusTone = 'success',
   isExporting = false,
@@ -14,6 +15,7 @@ export function Header({
   subtitle = 'State of your financial situation',
   title = 'Overview',
 }: {
+  extraActions?: ReactNode;
   importStatus?: string;
   importStatusTone?: 'error' | 'success';
   isExporting?: boolean;
@@ -86,7 +88,8 @@ export function Header({
       </div>
       {showActions && (
         <div className="flex flex-col items-start gap-1" data-pdf-exclude="true">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {extraActions}
             <button
               className={buttonClasses()}
               disabled={isImporting}
