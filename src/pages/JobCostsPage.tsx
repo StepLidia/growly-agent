@@ -1,12 +1,12 @@
 import { Fragment, useEffect, useId, useState } from 'react';
 import { BriefcaseBusiness, Info, Plus, Trash2 } from 'lucide-react';
 import { calculateJobHourlySalary } from '../calculations/jobCostsCalculations';
+import { JobNumberInput } from '../components/JobNumberInput';
 import { buttonClasses } from '../constants/buttonStyles';
 import { tooltipClasses } from '../constants/tooltipStyles';
 import { createJobExpense, readJobCosts, saveJobCosts, type Job, type JobExpense, type JobTerms, type WeeklyJobCost } from '../storage/jobCostsStorage';
 
 const jobNameFieldClasses = 'glass-input glass-input-job-name min-h-14 w-full min-w-0 py-2! text-md';
-const numberInputClasses = 'glass-input w-full min-w-0 py-1! text-right text-sm font-black text-slate-950 outline-none';
 const separatorClasses = 'border-l border-slate-400/80';
 const jobIconColors = [
   'bg-blue-500/10 text-blue-600',
@@ -152,16 +152,11 @@ function JobTermsCard({ jobs, onChange }: {
               <th scope="row" className={`pr-4 font-bold text-slate-950 ${rowIndex < 2 ? 'pb-1' : ''}`}>{label}</th>
               {jobs.map((job, index) => (
                 <td key={job.id} className={`${separatorClasses} px-3 ${rowIndex < 2 ? 'pb-1' : ''}`}>
-                  <input
-                    aria-label={`${job.name || `Job ${index + 1}`}, ${label}`}
-                    className={numberInputClasses}
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="any"
-                    placeholder="0"
+                  <JobNumberInput
+                    label={`${job.name || `Job ${index + 1}`}, ${label}`}
+                    grouped={field === 'netSalary'}
                     value={job[field]}
-                    onChange={(event) => onChange(job.id, field, event.target.value)}
+                    onChange={(value) => onChange(job.id, field, value)}
                   />
                 </td>
               ))}
@@ -294,10 +289,10 @@ function JobCostCells({ cost, label, onChange }: {
   return (
     <>
       <td className={`${separatorClasses} px-3 pb-1`}>
-        <input aria-label={`${label}, hours per week`} className={numberInputClasses} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={cost.hours} onChange={(event) => updateWeeklyValue('hours', event.target.value)} />
+        <JobNumberInput label={`${label}, hours per week`} value={cost.hours} onChange={(value) => updateWeeklyValue('hours', value)} />
       </td>
       <td className="px-3 pb-1">
-        <input aria-label={`${label}, CHF per week`} className={numberInputClasses} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={cost.money} onChange={(event) => updateWeeklyValue('money', event.target.value)} />
+        <JobNumberInput label={`${label}, CHF per week`} grouped value={cost.money} onChange={(value) => updateWeeklyValue('money', value)} />
       </td>
     </>
   );
