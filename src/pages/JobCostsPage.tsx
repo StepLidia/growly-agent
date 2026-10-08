@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useState } from 'react';
 import { BriefcaseBusiness, Info, Plus, Trash2 } from 'lucide-react';
-import { calculateJobHourlySalary } from '../calculations/jobCostsCalculations';
+import { calculateJobHourlySalary, calculateJobHourlySalaryAfterExpenses } from '../calculations/jobCostsCalculations';
 import { JobNumberInput } from '../components/JobNumberInput';
 import { buttonClasses } from '../constants/buttonStyles';
 import { tooltipClasses } from '../constants/tooltipStyles';
@@ -114,7 +114,11 @@ export function JobCostsPage() {
                       <Plus aria-hidden="true" className="h-4 w-4" /> Add expense
                     </button>
                   </td>
-                  {data.jobs.map((job) => <td key={job.id} colSpan={2} className={separatorClasses} />)}
+                  {data.jobs.map((job) => (
+                    <td key={job.id} colSpan={2} className={`${separatorClasses} px-3 pt-2 text-right`}>
+                      <JobHourlySalaryBadge job={job} expenses={data.expenses} />
+                    </td>
+                  ))}
                 </tr>
               </tbody>
             </table>
@@ -129,8 +133,8 @@ export function JobCostsPage() {
 }
 
 const jobTermRows: { field: keyof JobTerms; label: string }[] = [
-  { field: 'netSalary', label: 'Net salary after taxes CHF/year' },
-  { field: 'vacationWeeks', label: 'Vacation weeks' },
+  { field: 'netSalary', label: 'Net salary after taxes CHF / year' },
+  { field: 'vacationWeeks', label: 'Vacation weeks / year' },
   { field: 'hoursPerWeek', label: 'Hours per week' },
 ];
 
@@ -176,19 +180,33 @@ function JobTermsCard({ jobs, onChange }: {
   );
 }
 
-function JobHourlySalaryBadge({ job }: { job: Job }) {
-  const hourlySalary = calculateJobHourlySalary({
+function JobHourlySalaryBadge({ job, expenses }: { job: Job; expenses?: JobExpense[] }) {
+  const salaryInputs = {
     annualNetSalary: job.netSalary === '' ? NaN : Number(job.netSalary),
     vacationWeeks: job.vacationWeeks === '' ? NaN : Number(job.vacationWeeks),
     hoursPerWeek: job.hoursPerWeek === '' ? NaN : Number(job.hoursPerWeek),
-  });
+  };
+  const hourlySalary = expenses
+    ? calculateJobHourlySalaryAfterExpenses({
+      ...salaryInputs,
+      expenses: expenses.map((expense) => ({
+        hoursPerWeek: Number(expense.costs[job.id].hours),
+        moneyPerWeek: Number(expense.costs[job.id].money),
+      })),
+    })
+    : calculateJobHourlySalary(salaryInputs);
+  const toneClasses = expenses
+    ? 'border-orange-300/50 bg-orange-500/10 text-orange-700'
+    : 'border-emerald-300/50 bg-emerald-500/10 text-emerald-700';
 
   return (
     <span
-      className="inline-flex rounded-lg border border-emerald-300/50 bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-700"
+      className={`inline-flex rounded-lg border px-3 py-1.5 text-sm font-semibold ${toneClasses}`}
       title={hourlySalary === null
         ? 'Enter annual net salary, vacation weeks below 52, and weekly hours above zero.'
-        : 'Annual net salary ÷ ((52 − vacation weeks) × hours per week), before job expenses.'}
+        : expenses
+          ? '(Annual net salary - weekly expenses * working weeks) / ((weekly job hours + weekly expense hours) * working weeks). Working weeks = 52 - vacation weeks.'
+          : 'Annual net salary ÷ ((52 − vacation weeks) × hours per week), before job expenses.'}
     >
       {hourlySalary === null ? '—' : hourlySalary.toLocaleString('en-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CHF/hour
     </span>
