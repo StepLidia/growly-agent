@@ -30,6 +30,9 @@ describe('shared job costs storage', () => {
     });
     const data = createDefaultJobCosts();
     data.expenses = [];
+    data.jobs[0].netSalary = '85000';
+    data.jobs[0].vacationWeeks = '5';
+    data.jobs[0].hoursPerWeek = '40';
     expect(saveJobCosts(data)).toBe(true);
     expect([...stored.keys()]).toEqual(['growly-job-costs-v1']);
     expect(readJobCosts()).toEqual(data);

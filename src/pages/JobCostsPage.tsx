@@ -2,9 +2,9 @@ import { Fragment, useEffect, useId, useState } from 'react';
 import { BriefcaseBusiness, Info, Plus, Trash2 } from 'lucide-react';
 import { buttonClasses } from '../constants/buttonStyles';
 import { tooltipClasses } from '../constants/tooltipStyles';
-import { createJobExpense, readJobCosts, saveJobCosts, type Job, type JobExpense, type WeeklyJobCost } from '../storage/jobCostsStorage';
+import { createJobExpense, readJobCosts, saveJobCosts, type Job, type JobExpense, type JobTerms, type WeeklyJobCost } from '../storage/jobCostsStorage';
 
-const inputClasses = 'glass-input glass-input-job-name min-h-10 w-full min-w-0 py-2 text-sm font-black text-slate-950 outline-none';
+const jobNameFieldClasses = 'glass-input glass-input-job-name min-h-14 w-full min-w-0 py-2! text-md';
 const numberInputClasses = 'glass-input w-full min-w-0 py-1! text-right text-sm font-black text-slate-950 outline-none';
 const separatorClasses = 'border-l border-slate-400/80';
 const jobIconColors = [
@@ -37,6 +37,14 @@ export function JobCostsPage() {
     setData((current) => ({ ...current, expenses: current.expenses.filter((expense) => expense.id !== id) }));
   }
 
+  function updateJobTerm(id: string, field: keyof JobTerms, value: string) {
+    if (value !== '' && (!Number.isFinite(Number(value)) || Number(value) < 0)) return;
+    setData((current) => ({
+      ...current,
+      jobs: current.jobs.map((job) => job.id === id ? { ...job, [field]: value } : job),
+    }));
+  }
+
   return (
     <section className="space-y-5">
       <header>
@@ -50,21 +58,24 @@ export function JobCostsPage() {
             <div aria-hidden="true" className="w-64 shrink-0" />
             <div className="grid min-w-0 flex-1 grid-cols-4">
               {data.jobs.map((job, index) => (
-                <div key={job.id} className="flex min-w-0 items-center gap-2 px-3">
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${jobIconColors[index]}`}>
-                    <BriefcaseBusiness aria-hidden="true" className="h-5 w-5" />
-                  </span>
-                  <input
-                    aria-label={`Job ${index + 1} name`}
-                    className={inputClasses}
-                    placeholder={`Job ${index + 1}`}
-                    value={job.name}
-                    onChange={(event) => updateJobName(job.id, event.target.value)}
-                  />
+                <div key={job.id} className="min-w-0 px-3">
+                  <label className={jobNameFieldClasses}>
+                    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${jobIconColors[index]}`}>
+                      <BriefcaseBusiness aria-hidden="true" className="h-5 w-5" />
+                    </span>
+                    <input
+                      aria-label={`Job ${index + 1} name`}
+                      className="w-full min-w-0 bg-transparent font-black text-slate-950 outline-none"
+                      placeholder={`Job ${index + 1}`}
+                      value={job.name}
+                      onChange={(event) => updateJobName(job.id, event.target.value)}
+                    />
+                  </label>
                 </div>
               ))}
             </div>
           </div>
+          <JobTermsCard jobs={data.jobs} onChange={updateJobTerm} />
           <article aria-label="Weekly job cost comparison" className="glass-panel min-w-0 rounded-2xl p-4">
             <table className="w-full table-fixed border-collapse text-left text-sm">
               <caption className="sr-only">Shared work expenses with weekly hours and CHF for each job</caption>
@@ -113,6 +124,51 @@ export function JobCostsPage() {
         <p role="status" className="text-sm text-amber-800">Your changes could not be saved in this browser. Keep this page open to retain them.</p>
       )}
     </section>
+  );
+}
+
+const jobTermRows: { field: keyof JobTerms; label: string }[] = [
+  { field: 'netSalary', label: 'Net salary after taxes CHF/year' },
+  { field: 'vacationWeeks', label: 'Vacation weeks' },
+  { field: 'hoursPerWeek', label: 'Hours per week' },
+];
+
+function JobTermsCard({ jobs, onChange }: {
+  jobs: Job[];
+  onChange: (id: string, field: keyof JobTerms, value: string) => void;
+}) {
+  return (
+    <article aria-label="Job salary and working hours" className="glass-panel mb-3 min-w-0 rounded-2xl p-4">
+      <table className="w-full table-fixed border-collapse text-left text-sm">
+        <caption className="sr-only">Annual net salary, vacation weeks and weekly working hours for each job</caption>
+        <colgroup>
+          <col className="w-64" />
+          {jobs.map((job) => <col key={job.id} />)}
+        </colgroup>
+        <tbody>
+          {jobTermRows.map(({ field, label }, rowIndex) => (
+            <tr key={field}>
+              <th scope="row" className={`pr-4 font-bold text-slate-950 ${rowIndex < 2 ? 'pb-1' : ''}`}>{label}</th>
+              {jobs.map((job, index) => (
+                <td key={job.id} className={`${separatorClasses} px-3 ${rowIndex < 2 ? 'pb-1' : ''}`}>
+                  <input
+                    aria-label={`${job.name || `Job ${index + 1}`}, ${label}`}
+                    className={numberInputClasses}
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    placeholder="0"
+                    value={job[field]}
+                    onChange={(event) => onChange(job.id, field, event.target.value)}
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </article>
   );
 }
 

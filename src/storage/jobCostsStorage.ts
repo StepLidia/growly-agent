@@ -1,4 +1,9 @@
-export type Job = { id: string; name: string };
+export type JobTerms = {
+  netSalary: string;
+  vacationWeeks: string;
+  hoursPerWeek: string;
+};
+export type Job = { id: string; name: string } & JobTerms;
 export type WeeklyJobCost = { hours: string; money: string };
 export type JobExpense = {
   id: string;
@@ -34,7 +39,13 @@ export function createJobExpense(jobs: Job[], name = ''): JobExpense {
 }
 
 export function createDefaultJobCosts(): JobCostsData {
-  const jobs = ['Job A', 'Job B', 'Job C', 'Job D'].map((name, index) => ({ id: `job-${index}`, name }));
+  const jobs = ['Job A', 'Job B', 'Job C', 'Job D'].map((name, index) => ({
+    id: `job-${index}`,
+    name,
+    netSalary: '',
+    vacationWeeks: '',
+    hoursPerWeek: '',
+  }));
   return { jobs, expenses: DEFAULT_EXPENSE_NAMES.map((name) => createJobExpense(jobs, name)) };
 }
 
@@ -67,10 +78,16 @@ function isWeeklyJobCost(value: unknown): value is WeeklyJobCost {
   return isWeeklyValue(cost.hours) && isWeeklyValue(cost.money);
 }
 
-function isJob(value: unknown): value is Job {
+function isNamedItem(value: unknown): value is { id: string; name: string } {
   if (!value || typeof value !== 'object') return false;
   const job = value as Partial<Job>;
   return typeof job.id === 'string' && typeof job.name === 'string';
+}
+
+function isJob(value: unknown): value is Job {
+  if (!isNamedItem(value)) return false;
+  const job = value as Partial<Job>;
+  return isWeeklyValue(job.netSalary) && isWeeklyValue(job.vacationWeeks) && isWeeklyValue(job.hoursPerWeek);
 }
 
 function isJobCostsData(value: unknown): value is JobCostsData {
@@ -80,7 +97,7 @@ function isJobCostsData(value: unknown): value is JobCostsData {
     || new Set(data.jobs.map((job) => job.id)).size !== 4 || !Array.isArray(data.expenses)) return false;
   const jobs = data.jobs;
   return data.expenses.every((expense: unknown) => {
-    if (!isJob(expense)) return false;
+    if (!isNamedItem(expense)) return false;
     const row = expense as Partial<JobExpense>;
     return Boolean(row.costs && typeof row.costs === 'object'
       && jobs.every((job) => Object.prototype.hasOwnProperty.call(row.costs, job.id) && isWeeklyJobCost(row.costs![job.id])));
