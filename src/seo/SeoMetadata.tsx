@@ -49,6 +49,11 @@ const routeSeoMetadata: RouteSeoMetadata[] = [
       'Compare Swiss mortgage costs, repayment scenarios, ownership expenses, and renting alternatives with an interactive mortgage calculator.',
   },
   {
+    path: '/job-costs',
+    title: 'Weekly Job Costs - Growly',
+    description: 'Compare weekly job expenses and time commitments in hours and CHF across four jobs with editable names and expense rows.',
+  },
+  {
     path: '/car',
     title: 'Car Financing - Growly',
     description: 'Compare leasing vs credit for car financing, calculate monthly payments and net gain after several years.',

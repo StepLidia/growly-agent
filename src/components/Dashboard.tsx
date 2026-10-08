@@ -14,6 +14,7 @@ const CarPage = lazy(() => import('../pages/CarPage').then((module) => ({ defaul
 const ContactPage = lazy(() => import('../pages/ContactPage').then((module) => ({ default: module.ContactPage })));
 const DetailsPage = lazy(() => import('../pages/DetailsPage').then((module) => ({ default: module.DetailsPage })));
 const ExpensesPage = lazy(() => import('../pages/ExpensesPage').then((module) => ({ default: module.ExpensesPage })));
+const JobCostsPage = lazy(() => import('../pages/JobCostsPage').then((module) => ({ default: module.JobCostsPage })));
 const MortgagePage = lazy(() => import('../pages/MortgagePage').then((module) => ({ default: module.MortgagePage })));
 const ProgressPage = lazy(() => import('../pages/ProgressPage').then((module) => ({ default: module.ProgressPage })));
 
@@ -298,6 +299,7 @@ export function Dashboard() {
                   />
                 }
               />
+              <Route path="/job-costs" element={<JobCostsPage />} />
               <Route path="/car" element={<CarPage />} />
               <Route path="/mortgage" element={<MortgagePage dashboardAssets={assets} />} />
               <Route path="/contact" element={<ContactPage />} />
