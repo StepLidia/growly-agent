@@ -2,6 +2,7 @@ import { Fragment, useEffect, useId, useState } from 'react';
 import { BriefcaseBusiness, Info, Plus, Trash2 } from 'lucide-react';
 import { calculateJobHourlySalary, calculateJobHourlySalaryAfterExpenses } from '../calculations/jobCostsCalculations';
 import { JobNumberInput } from '../components/JobNumberInput';
+import { FullNameTooltip } from '../components/FullNameTooltip';
 import { buttonClasses } from '../constants/buttonStyles';
 import { tooltipClasses } from '../constants/tooltipStyles';
 import { createJobExpense, readJobCosts, saveJobCosts, type Job, type JobExpense, type JobTerms, type WeeklyJobCost } from '../storage/jobCostsStorage';
@@ -64,13 +65,15 @@ export function JobCostsPage() {
                     <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${jobIconColors[index]}`}>
                       <BriefcaseBusiness aria-hidden="true" className="h-5 w-5" />
                     </span>
-                    <input
-                      aria-label={`Job ${index + 1} name`}
-                      className="w-full min-w-0 bg-transparent font-black text-slate-950 outline-none"
-                      placeholder={`Job ${index + 1}`}
-                      value={job.name}
-                      onChange={(event) => updateJobName(job.id, event.target.value)}
-                    />
+                    <FullNameTooltip text={job.name}>
+                      <input
+                        aria-label={`Job ${index + 1} name`}
+                        className="w-full min-w-0 truncate bg-transparent font-black text-slate-950 outline-none focus:text-clip"
+                        placeholder={`Job ${index + 1}`}
+                        value={job.name}
+                        onChange={(event) => updateJobName(job.id, event.target.value)}
+                      />
+                    </FullNameTooltip>
                   </label>
                 </div>
               ))}
@@ -154,12 +157,14 @@ function JobTermsCard({ jobs, onChange }: {
           {jobTermRows.map(({ field, label }, rowIndex) => (
             <tr key={field}>
               <th scope="row" className={`pr-4 font-bold text-slate-950 ${rowIndex < 2 ? 'pb-1' : ''}`}>
-                <span className="inline-flex items-center gap-2">
-                  {label}
+                <span className="flex min-w-0 items-center gap-2">
+                  <FullNameTooltip text={label}>
+                    <span className="block truncate">{label}</span>
+                  </FullNameTooltip>
                   {field === 'netSalary' && (
                     <JobInfoHint
                       label="About net salary after taxes"
-                      text="You can calculate this number by using 'gross salary - estimated taxes' formula and substract other social deductions you would like to exclude from analysis"
+                      text="You can calculate this number by using 'gross salary - estimated taxes' formula and substracting other social deductions you would like to exclude from analysis"
                     />
                   )}
                 </span>
@@ -273,13 +278,15 @@ function JobExpenseRow({ expense, jobs, position, onChange, onRemove }: {
     <tr>
       <th scope="row" className="pb-1 pr-4 font-normal">
         <div className="flex items-center gap-2">
-          <input
-            aria-label={`Expense ${position} name`}
-            className="w-full min-w-0 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20"
-            placeholder="Expense"
-            value={expense.name}
-            onChange={(event) => onChange({ ...expense, name: event.target.value })}
-          />
+          <FullNameTooltip text={expense.name}>
+            <input
+              aria-label={`Expense ${position} name`}
+              className="w-full min-w-0 truncate rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm text-slate-950 outline-none focus:text-clip focus-visible:ring-2 focus-visible:ring-blue-500/20"
+              placeholder="Expense"
+              value={expense.name}
+              onChange={(event) => onChange({ ...expense, name: event.target.value })}
+            />
+          </FullNameTooltip>
           <button
             type="button"
             aria-label={`Remove ${label}`}
