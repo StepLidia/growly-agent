@@ -116,11 +116,11 @@ function JobExpenseRow({ expense, jobs, position, onChange, onRemove }: {
 
   return (
     <tr>
-      <th scope="row" className="pb-2 pr-4 font-normal">
+      <th scope="row" className="pb-1 pr-4 font-normal">
         <div className="flex items-center gap-2">
           <input
             aria-label={`Expense ${position} name`}
-            className="min-h-10 w-full min-w-0 rounded-lg border border-transparent bg-transparent px-2 py-2 text-sm text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20"
+            className="w-full min-w-0 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20"
             placeholder="Expense"
             value={expense.name}
             onChange={(event) => onChange({ ...expense, name: event.target.value })}
@@ -129,7 +129,7 @@ function JobExpenseRow({ expense, jobs, position, onChange, onRemove }: {
             type="button"
             aria-label={`Remove ${label}`}
             title={`Remove ${label}`}
-            className="grid h-10 w-8 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-blue-500"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-red-500/10 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-blue-500"
             onClick={onRemove}
           >
             <Trash2 aria-hidden="true" className="h-4 w-4" />
@@ -161,10 +161,10 @@ function JobCostCells({ cost, label, onChange }: {
 
   return (
     <>
-      <td className={`${separatorClasses} px-3 pb-2`}>
+      <td className={`${separatorClasses} px-3 pb-1`}>
         <input aria-label={`${label}, hours per week`} className={numberInputClasses} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={cost.hours} onChange={(event) => updateWeeklyValue('hours', event.target.value)} />
       </td>
-      <td className="px-3 pb-2">
+      <td className="px-3 pb-1">
         <input aria-label={`${label}, CHF per week`} className={numberInputClasses} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={cost.money} onChange={(event) => updateWeeklyValue('money', event.target.value)} />
       </td>
     </>
