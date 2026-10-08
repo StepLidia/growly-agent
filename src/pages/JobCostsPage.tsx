@@ -80,7 +80,7 @@ export function JobCostsPage() {
             </div>
           </div>
           <JobTermsCard jobs={data.jobs} onChange={updateJobTerm} />
-          <article aria-label="Weekly job cost comparison" className="glass-panel min-w-0 rounded-2xl p-4">
+          <article aria-label="Weekly job cost comparison" className="glass-panel min-w-0 rounded-2xl p-4 shadow-sm!">
             <table className="w-full table-fixed border-collapse text-left text-sm">
               <caption className="sr-only">Shared work expenses with weekly hours and CHF for each job</caption>
               <colgroup>
@@ -146,7 +146,7 @@ function JobTermsCard({ jobs, onChange }: {
   onChange: (id: string, field: keyof JobTerms, value: string) => void;
 }) {
   return (
-    <article aria-label="Job salary and working hours" className="glass-panel mb-3 min-w-0 rounded-2xl p-4 hover:z-30 focus-within:z-30">
+    <article aria-label="Job salary and working hours" className="glass-panel mb-3 min-w-0 rounded-2xl p-4 shadow-sm! hover:z-30 focus-within:z-30">
       <table className="w-full table-fixed border-collapse text-left text-sm">
         <caption className="sr-only">Annual net salary, vacation weeks and weekly working hours for each job</caption>
         <colgroup>
@@ -158,7 +158,7 @@ function JobTermsCard({ jobs, onChange }: {
             <tr key={field}>
               <th scope="row" className={`pr-4 font-bold text-slate-950 ${rowIndex < 2 ? 'pb-1' : ''}`}>
                 <span className="flex min-w-0 items-center gap-2">
-                  <FullNameTooltip text={label}>
+                  <FullNameTooltip text={label} grow={false}>
                     <span className="block truncate">{label}</span>
                   </FullNameTooltip>
                   {field === 'netSalary' && (

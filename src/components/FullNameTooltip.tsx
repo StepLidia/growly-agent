@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } f
 import { createPortal } from 'react-dom';
 import { tooltipContentClasses } from '../constants/tooltipStyles';
 
-export function FullNameTooltip({ text, children }: { text: string; children: ReactNode }) {
+export function FullNameTooltip({ text, children, grow = true }: { text: string; children: ReactNode; grow?: boolean }) {
   const id = useId();
   const anchorRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLSpanElement>(null);
@@ -61,7 +61,7 @@ export function FullNameTooltip({ text, children }: { text: string; children: Re
   return (
     <span
       ref={anchorRef}
-      className="block min-w-0 flex-1"
+      className={`block min-w-0 ${grow ? 'flex-1' : 'flex-initial'}`}
       aria-describedby={isOpen ? id : undefined}
       onMouseEnter={show}
       onMouseLeave={() => setIsOpen(false)}
