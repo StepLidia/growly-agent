@@ -51,7 +51,7 @@ const routeSeoMetadata: RouteSeoMetadata[] = [
   {
     path: '/job-costs',
     title: 'Weekly Job Costs - Growly',
-    description: 'Compare weekly job expenses and time commitments in hours and CHF across four jobs with editable names and expense rows.',
+    description: 'Compare weekly job expenses and time commitments in hours and CHF across different jobs to find out your real net hourly wage.',
   },
   {
     path: '/car',
