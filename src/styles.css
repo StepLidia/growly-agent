@@ -304,6 +304,10 @@ input[type="number"]::-webkit-inner-spin-button {
     background 160ms ease;
 }
 
+.glass-input-job-name {
+  background: rgba(250, 251, 252, 0.642);
+}
+
 .glass-input:focus-within {
   border-color: rgba(14, 116, 144, 0.34);
   background:

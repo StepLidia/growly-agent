@@ -1,11 +1,18 @@
-import { Fragment, useEffect, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Fragment, useEffect, useId, useState } from 'react';
+import { BriefcaseBusiness, Info, Plus, Trash2 } from 'lucide-react';
 import { buttonClasses } from '../constants/buttonStyles';
+import { tooltipClasses } from '../constants/tooltipStyles';
 import { createJobExpense, readJobCosts, saveJobCosts, type Job, type JobExpense, type WeeklyJobCost } from '../storage/jobCostsStorage';
 
-const inputClasses = 'glass-input min-h-10 w-full min-w-0 py-2 text-sm font-black text-slate-950 outline-none';
+const inputClasses = 'glass-input glass-input-job-name min-h-10 w-full min-w-0 py-2 text-sm font-black text-slate-950 outline-none';
 const numberInputClasses = 'glass-input w-full min-w-0 py-1! text-right text-sm font-black text-slate-950 outline-none';
 const separatorClasses = 'border-l border-slate-400/80';
+const jobIconColors = [
+  'bg-blue-500/10 text-blue-600',
+  'bg-violet-500/10 text-violet-600',
+  'bg-emerald-500/10 text-emerald-600',
+  'bg-amber-500/10 text-amber-600',
+];
 
 export function JobCostsPage() {
   const [data, setData] = useState(readJobCosts);
@@ -43,7 +50,10 @@ export function JobCostsPage() {
             <div aria-hidden="true" className="w-64 shrink-0" />
             <div className="grid min-w-0 flex-1 grid-cols-4">
               {data.jobs.map((job, index) => (
-                <div key={job.id} className="min-w-0 px-3">
+                <div key={job.id} className="flex min-w-0 items-center gap-2 px-3">
+                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${jobIconColors[index]}`}>
+                    <BriefcaseBusiness aria-hidden="true" className="h-5 w-5" />
+                  </span>
                   <input
                     aria-label={`Job ${index + 1} name`}
                     className={inputClasses}
@@ -64,11 +74,16 @@ export function JobCostsPage() {
               </colgroup>
               <thead>
                 <tr className="text-slate-700">
-                  <th scope="col" className="pb-4 pr-4 align-top font-black">Name of expense</th>
+                  <th scope="col" className="pb-4 pr-4 align-top font-bold">
+                    <span className="inline-flex items-center gap-2">
+                      Name of expense
+                      <ExpenseDefinitionHint />
+                    </span>
+                  </th>
                   {data.jobs.map((job) => (
                     <Fragment key={job.id}>
-                      <th scope="col" className={`${separatorClasses} px-3 pb-4 font-black`}>Time<span className="block font-normal">hours/week</span></th>
-                      <th scope="col" className="px-3 pb-4 font-black">Money<span className="block font-normal">CHF/week</span></th>
+                      <th scope="col" className={`${separatorClasses} px-3 pb-4 font-bold`}>Time<span className="block font-normal">hours/week</span></th>
+                      <th scope="col" className="px-3 pb-4 font-bold">Money<span className="block font-normal">CHF/week</span></th>
                     </Fragment>
                   ))}
                 </tr>
@@ -98,6 +113,39 @@ export function JobCostsPage() {
         <p role="status" className="text-sm text-amber-800">Your changes could not be saved in this browser. Keep this page open to retain them.</p>
       )}
     </section>
+  );
+}
+
+function ExpenseDefinitionHint() {
+  const tooltipId = useId();
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <span className="group relative" data-tooltip-open={isOpen} onMouseLeave={() => setIsOpen(false)}>
+      <button
+        type="button"
+        aria-label="About job expenses"
+        aria-describedby={tooltipId}
+        className="grid h-5 w-5 place-items-center rounded-full text-slate-500 transition hover:bg-white/50 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-blue-500"
+        onClick={() => setIsOpen((current) => !current)}
+        onBlur={() => setIsOpen(false)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            setIsOpen(false);
+            event.currentTarget.blur();
+          }
+        }}
+      >
+        <Info aria-hidden="true" className="h-4 w-4" />
+      </button>
+      <span
+        id={tooltipId}
+        role="tooltip"
+        className={tooltipClasses('left-0 top-7 w-64 p-3 text-xs! leading-5 group-hover:opacity-100 group-focus-within:opacity-100')}
+      >
+        Expenses that wouldn't normally occur in your life without this job
+      </span>
+    </span>
   );
 }
 
