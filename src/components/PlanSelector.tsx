@@ -134,6 +134,10 @@ export function PlanSelector({
                       aria-label="Save plan name"
                       className={buttonClasses({ size: 'icon' })}
                       disabled={!draftName.trim()}
+                      onPointerDown={(event) => {
+                        // Safari does not focus tapped buttons automatically; keep blur inside the editor.
+                        event.currentTarget.focus();
+                      }}
                       type="submit"
                     >
                       <Check className="h-4 w-4" />
