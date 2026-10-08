@@ -89,7 +89,7 @@ export function JobCostsPage() {
                   <th scope="col" className="pb-4 pr-4 align-top font-bold">
                     <span className="inline-flex items-center gap-2">
                       Name of expense
-                      <ExpenseDefinitionHint />
+                      <JobInfoHint label="About job expenses" text="Expenses that wouldn't normally occur in your life without this job" />
                     </span>
                   </th>
                   {data.jobs.map((job) => (
@@ -133,7 +133,7 @@ export function JobCostsPage() {
 }
 
 const jobTermRows: { field: keyof JobTerms; label: string }[] = [
-  { field: 'netSalary', label: 'Net salary after taxes CHF / year' },
+  { field: 'netSalary', label: 'Net salary CHF / year' },
   { field: 'vacationWeeks', label: 'Vacation weeks / year' },
   { field: 'hoursPerWeek', label: 'Hours per week' },
 ];
@@ -143,7 +143,7 @@ function JobTermsCard({ jobs, onChange }: {
   onChange: (id: string, field: keyof JobTerms, value: string) => void;
 }) {
   return (
-    <article aria-label="Job salary and working hours" className="glass-panel mb-3 min-w-0 rounded-2xl p-4">
+    <article aria-label="Job salary and working hours" className="glass-panel mb-3 min-w-0 rounded-2xl p-4 hover:z-30 focus-within:z-30">
       <table className="w-full table-fixed border-collapse text-left text-sm">
         <caption className="sr-only">Annual net salary, vacation weeks and weekly working hours for each job</caption>
         <colgroup>
@@ -153,7 +153,17 @@ function JobTermsCard({ jobs, onChange }: {
         <tbody>
           {jobTermRows.map(({ field, label }, rowIndex) => (
             <tr key={field}>
-              <th scope="row" className={`pr-4 font-bold text-slate-950 ${rowIndex < 2 ? 'pb-1' : ''}`}>{label}</th>
+              <th scope="row" className={`pr-4 font-bold text-slate-950 ${rowIndex < 2 ? 'pb-1' : ''}`}>
+                <span className="inline-flex items-center gap-2">
+                  {label}
+                  {field === 'netSalary' && (
+                    <JobInfoHint
+                      label="About net salary after taxes"
+                      text="You can calculate this number by using 'gross salary - estimated taxes' formula and substract other social deductions you would like to exclude from analysis"
+                    />
+                  )}
+                </span>
+              </th>
               {jobs.map((job, index) => (
                 <td key={job.id} className={`${separatorClasses} px-3 ${rowIndex < 2 ? 'pb-1' : ''}`}>
                   <JobNumberInput
@@ -213,15 +223,15 @@ function JobHourlySalaryBadge({ job, expenses }: { job: Job; expenses?: JobExpen
   );
 }
 
-function ExpenseDefinitionHint() {
+function JobInfoHint({ label, text }: { label: string; text: string }) {
   const tooltipId = useId();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <span className="group relative" data-tooltip-open={isOpen} onMouseLeave={() => setIsOpen(false)}>
+    <span className="group relative shrink-0" data-tooltip-open={isOpen} onMouseLeave={() => setIsOpen(false)}>
       <button
         type="button"
-        aria-label="About job expenses"
+        aria-label={label}
         aria-describedby={tooltipId}
         className="grid h-5 w-5 place-items-center rounded-full text-slate-500 transition hover:bg-white/50 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-blue-500"
         onClick={() => setIsOpen((current) => !current)}
@@ -240,7 +250,7 @@ function ExpenseDefinitionHint() {
         role="tooltip"
         className={tooltipClasses('left-0 top-7 w-64 p-3 text-xs! leading-5 group-hover:opacity-100 group-focus-within:opacity-100')}
       >
-        Expenses that wouldn't normally occur in your life without this job
+        {text}
       </span>
     </span>
   );
