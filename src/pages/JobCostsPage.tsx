@@ -3,7 +3,8 @@ import { Plus, Trash2 } from 'lucide-react';
 import { buttonClasses } from '../constants/buttonStyles';
 import { createJobExpense, readJobCosts, saveJobCosts, type Job, type JobExpense, type WeeklyJobCost } from '../storage/jobCostsStorage';
 
-const inputClasses = 'min-h-10 w-full min-w-0 rounded-lg border border-slate-300/60 bg-white/70 px-2 py-2 text-sm text-slate-950 outline-none transition focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/20';
+const inputClasses = 'glass-input min-h-10 w-full min-w-0 py-2 text-sm font-black text-slate-950 outline-none';
+const numberInputClasses = 'glass-input w-full min-w-0 py-1! text-right text-sm font-black text-slate-950 outline-none';
 const separatorClasses = 'border-l border-slate-400/80';
 
 export function JobCostsPage() {
@@ -45,7 +46,7 @@ export function JobCostsPage() {
                 <div key={job.id} className="min-w-0 px-3">
                   <input
                     aria-label={`Job ${index + 1} name`}
-                    className={`${inputClasses} font-black`}
+                    className={inputClasses}
                     placeholder={`Job ${index + 1}`}
                     value={job.name}
                     onChange={(event) => updateJobName(job.id, event.target.value)}
@@ -161,10 +162,10 @@ function JobCostCells({ cost, label, onChange }: {
   return (
     <>
       <td className={`${separatorClasses} px-3 pb-2`}>
-        <input aria-label={`${label}, hours per week`} className={inputClasses} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={cost.hours} onChange={(event) => updateWeeklyValue('hours', event.target.value)} />
+        <input aria-label={`${label}, hours per week`} className={numberInputClasses} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={cost.hours} onChange={(event) => updateWeeklyValue('hours', event.target.value)} />
       </td>
       <td className="px-3 pb-2">
-        <input aria-label={`${label}, CHF per week`} className={inputClasses} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={cost.money} onChange={(event) => updateWeeklyValue('money', event.target.value)} />
+        <input aria-label={`${label}, CHF per week`} className={numberInputClasses} type="number" inputMode="decimal" min="0" step="any" placeholder="0" value={cost.money} onChange={(event) => updateWeeklyValue('money', event.target.value)} />
       </td>
     </>
   );
