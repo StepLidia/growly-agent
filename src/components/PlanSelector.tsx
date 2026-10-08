@@ -74,7 +74,9 @@ export function PlanSelector({
           }
         }}
         onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget)) {
+          // Safari can report no next focus target when tapping Save or dismissing the keyboard.
+          // Outside taps are handled separately by the document pointerdown listener.
+          if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) {
             setIsOpen(false);
             setEditingId(null);
           }
@@ -134,10 +136,6 @@ export function PlanSelector({
                       aria-label="Save plan name"
                       className={buttonClasses({ size: 'icon' })}
                       disabled={!draftName.trim()}
-                      onPointerDown={(event) => {
-                        // Safari does not focus tapped buttons automatically; keep blur inside the editor.
-                        event.currentTarget.focus();
-                      }}
                       type="submit"
                     >
                       <Check className="h-4 w-4" />
