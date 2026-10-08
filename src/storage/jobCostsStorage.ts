@@ -7,21 +7,22 @@ export type JobExpense = {
 };
 export type JobCostsData = { jobs: Job[]; expenses: JobExpense[] };
 
-type LegacyJob = Job & { expenses: (WeeklyJobCost & { id: string; name: string })[] };
-
-const JOB_COSTS_STORAGE_KEY = 'growly-job-costs-v2';
-const LEGACY_STORAGE_KEY = 'growly-job-costs-v1';
+const JOB_COSTS_STORAGE_KEY = 'growly-job-costs-v1';
 const DEFAULT_EXPENSE_NAMES = [
   'Commuting',
-  'Work meals',
-  'Work clothes',
-  'Work footwear',
-  'Accessories for work',
-  'Work tools and equipment',
-  'Professional training',
-  'Professional memberships',
-  'Childcare during work',
-  'Unreimbursed business travel',
+  'Work Meals',
+  'Coffee & Snacks',
+  'Work Clothing',
+  'Grooming & Appearance',
+  'Professional Equipment',
+  'Training & Certifications',
+  'Professional Memberships',
+  'Childcare & Dependent Care',
+  'Convenience Purchases',
+  'Decompression & Entertainment',
+  'Health & Recovery',
+  'Unpaid Work Preparation',
+  'Miscellaneous Expenses',
 ];
 
 export function createJobExpense(jobs: Job[], name = ''): JobExpense {
@@ -41,12 +42,6 @@ export function readJobCosts(): JobCostsData {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(JOB_COSTS_STORAGE_KEY) ?? 'null');
     if (isJobCostsData(saved)) return saved;
-
-    const legacy: unknown = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) ?? 'null');
-    if (Array.isArray(legacy) && legacy.length === 4 && legacy.every(isLegacyJob)
-      && new Set(legacy.map((job) => job.id)).size === 4) {
-      return migrateJobCosts(legacy);
-    }
   } catch {
     // Start with defaults when browser storage is unavailable or invalid.
   }
@@ -60,28 +55,6 @@ export function saveJobCosts(data: JobCostsData): boolean {
   } catch {
     return false;
   }
-}
-
-export function migrateJobCosts(legacy: LegacyJob[]): JobCostsData {
-  const jobs = legacy.map(({ id, name }) => ({ id, name }));
-  const expenses = DEFAULT_EXPENSE_NAMES.map((name) => createJobExpense(jobs, name));
-
-  for (const job of legacy) {
-    const assignedRows = new Set<string>();
-    for (const expense of job.expenses) {
-      if (!expense.name.trim() && !expense.hours && !expense.money) continue;
-      const name = expense.name.trim() || 'Unnamed expense';
-      let row = expenses.find((candidate) => candidate.name.trim().toLowerCase() === name.toLowerCase()
-        && !assignedRows.has(candidate.id));
-      if (!row) {
-        row = createJobExpense(jobs, name);
-        expenses.push(row);
-      }
-      row.costs[job.id] = { hours: expense.hours, money: expense.money };
-      assignedRows.add(row.id);
-    }
-  }
-  return { jobs, expenses };
 }
 
 function isWeeklyValue(value: unknown): value is string {
@@ -98,12 +71,6 @@ function isJob(value: unknown): value is Job {
   if (!value || typeof value !== 'object') return false;
   const job = value as Partial<Job>;
   return typeof job.id === 'string' && typeof job.name === 'string';
-}
-
-function isLegacyJob(value: unknown): value is LegacyJob {
-  if (!isJob(value)) return false;
-  const job = value as Partial<LegacyJob>;
-  return Array.isArray(job.expenses) && job.expenses.every((expense) => isJob(expense) && isWeeklyJobCost(expense));
 }
 
 function isJobCostsData(value: unknown): value is JobCostsData {

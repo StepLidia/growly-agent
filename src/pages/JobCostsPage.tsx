@@ -119,7 +119,7 @@ function JobExpenseRow({ expense, jobs, position, onChange, onRemove }: {
         <div className="flex items-center gap-2">
           <input
             aria-label={`Expense ${position} name`}
-            className={inputClasses}
+            className="min-h-10 w-full min-w-0 rounded-lg border border-transparent bg-transparent px-2 py-2 text-sm text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20"
             placeholder="Expense"
             value={expense.name}
             onChange={(event) => onChange({ ...expense, name: event.target.value })}
