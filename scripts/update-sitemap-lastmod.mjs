@@ -36,6 +36,17 @@ const routes = [
     ],
   },
   {
+    path: '/utilities',
+    changefreq: 'weekly',
+    priority: '0.8',
+    files: [
+      'src/pages/UtilitiesPage.tsx',
+      'src/calculations/utilityCalculations.ts',
+      'src/storage/utilityStorage.ts',
+      'src/components/MonthPicker.tsx',
+    ],
+  },
+  {
     path: '/details',
     changefreq: 'weekly',
     priority: '0.9',

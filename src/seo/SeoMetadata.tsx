@@ -37,6 +37,12 @@ const routeSeoMetadata: RouteSeoMetadata[] = [
       'Track monthly expenses, compare spending trends, analyze top categories, and review month-over-month changes in a private finance dashboard.',
   },
   {
+    path: '/utilities',
+    title: 'Water and Heating Consumption Tracker - Growly',
+    description:
+      'Record monthly cold water, hot water, and heater counter readings. Compare monthly and yearly consumption with data saved locally in your browser.',
+  },
+  {
     path: '/expenses/trends',
     title: 'Expense Trend Analysis - Growly',
     description:
