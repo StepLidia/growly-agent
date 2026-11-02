@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ChevronDown } from 'lucide-react';
+import { Heater, CalendarDays, ChevronDown, Droplet } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
   buildUtilityMonth, buildUtilityPeriods, utilityCounters,
@@ -135,6 +135,21 @@ function UtilitiesHeader({ aggregation, month, onAggregationChange, onMonthChang
 
 type CounterDefinition = typeof utilityCounters[number];
 
+function UtilityCounterIcon({ counter }: { counter: UtilityCounter }) {
+  const Icon = counter === 'heater' ? Heater : Droplet;
+  const colorClasses = {
+    heater: 'bg-orange-600/10 text-orange-600',
+    coldWater: 'bg-blue-500/12 text-blue-600',
+    hotWater: 'bg-rose-500/12 text-rose-600',
+  };
+
+  return (
+    <span aria-hidden="true" className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${colorClasses[counter]}`}>
+      <Icon className="h-5 w-5" />
+    </span>
+  );
+}
+
 function CounterReadingInput({ counter, value, onChange }: {
   counter: CounterDefinition;
   value: number | undefined;
@@ -145,7 +160,10 @@ function CounterReadingInput({ counter, value, onChange }: {
 
   return (
     <div className="flex items-center justify-between gap-3">
-      <label htmlFor={`utility-${counter.id}`} className="text-sm font-bold text-slate-700">{counter.label}</label>
+      <label htmlFor={`utility-${counter.id}`} className="flex items-center gap-2 text-sm font-bold text-slate-700">
+        <UtilityCounterIcon counter={counter.id} />
+        {counter.label}
+      </label>
       <div className="flex min-w-0 items-center gap-2">
         <input
           id={`utility-${counter.id}`}
@@ -179,8 +197,13 @@ function UtilityConsumptionChart({ counter, periods, aggregation }: {
 
   return (
     <section className="glass-panel min-w-0 p-4">
-      <h2 className="text-sm font-bold text-slate-950">{counter.label} Consumption</h2>
-      <p className="mt-1 text-sm text-slate-600">{aggregation === 'month' ? 'Monthly' : 'Yearly'} consumption · {counter.unit}</p>
+      <div className="flex items-center gap-3">
+        <UtilityCounterIcon counter={counter.id} />
+        <div>
+          <h2 className="text-sm font-bold text-slate-950">{counter.label} Consumption</h2>
+          <p className="mt-1 text-sm text-slate-600">{aggregation === 'month' ? 'Monthly' : 'Yearly'} consumption · {counter.unit}</p>
+        </div>
+      </div>
       <div className="mt-4 h-64 min-w-0">
         {hasConsumption ? (
           <ResponsiveContainer width="100%" height="100%">
