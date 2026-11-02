@@ -10,6 +10,7 @@ import { buttonClasses } from '../constants/buttonStyles';
 import { tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 import { readUtilities, saveUtilities } from '../storage/utilityStorage';
+import { formatCounterValue, parseCounterValue } from '../calculations/counterNumberInput';
 
 export function UtilitiesPage() {
   const [month, setMonth] = useState(() => {
@@ -43,7 +44,7 @@ export function UtilitiesPage() {
       <div className="mt-5 grid gap-3 md:grid-cols-2">
         <section className="glass-panel min-w-0 p-4">
           <h2 className="text-sm font-bold text-slate-950">Counter Readings</h2>
-          <p className="mt-1 text-sm text-slate-600">{month.label} · Enter the cumulative reading from each counter.</p>
+          <p className="mt-1 text-sm text-slate-600">{month.label} · Enter the cumulative reading from each counter at the end of the month.</p>
           <div className="mt-5 space-y-4" key={month.key}>
             {utilityCounters.map((counter) => (
               <CounterReadingInput
@@ -155,8 +156,11 @@ function CounterReadingInput({ counter, value, onChange }: {
   value: number | undefined;
   onChange: (value: number | undefined) => void;
 }) {
-  const [draft, setDraft] = useState(value === undefined ? '' : String(value));
-  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState(() => formatCounterValue(value));
+
+  useEffect(() => {
+    setDraft(formatCounterValue(value));
+  }, [value]);
 
   return (
     <div className="flex items-center justify-between gap-3">
@@ -171,15 +175,12 @@ function CounterReadingInput({ counter, value, onChange }: {
           type="text"
           inputMode="decimal"
           placeholder="No reading"
-          value={focused ? draft : value === undefined ? '' : currency(value)}
-          onFocus={() => { setDraft(value === undefined ? '' : String(value)); setFocused(true); }}
-          onBlur={() => setFocused(false)}
+          value={draft}
           onChange={(event) => {
-            const raw = event.currentTarget.value.replaceAll(',', '');
-            if (!/^\d*\.?\d*$/.test(raw)) return;
-            setDraft(raw);
-            if (raw === '') onChange(undefined);
-            else if (Number.isFinite(Number(raw))) onChange(Number(raw));
+            const nextValue = parseCounterValue(event.currentTarget.value);
+            if (nextValue === null) return;
+            setDraft(formatCounterValue(nextValue));
+            onChange(nextValue);
           }}
         />
         <span className="w-8 text-sm font-bold text-slate-600">{counter.unit}</span>
