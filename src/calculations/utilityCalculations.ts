@@ -1,6 +1,6 @@
 export const utilityCounters = [
-  { id: 'heater', label: 'Heater', unit: 'kWh', color: '#3366DB' },
-  { id: 'coldWater', label: 'Cold water', unit: 'm³', color: '#1D9BB5' },
+  { id: 'heater', label: 'Heater', unit: 'kWh', color: '#EA580C' },
+  { id: 'coldWater', label: 'Cold water', unit: 'm³', color: '#2563EB' },
   { id: 'hotWater', label: 'Hot water', unit: 'm³', color: '#EE758B' },
 ] as const;
 
