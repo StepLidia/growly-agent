@@ -1,7 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { formatCounterValue, parseCounterValue } from './counterNumberInput';
+import { formatCounterInput, formatCounterValue, parseCounterValue } from './counterNumberInput';
 
 describe('counter number input', () => {
+  it('preserves water decimals and uses a dot separator', () => {
+    expect(formatCounterValue(1234.567, true)).toBe('1,234.567');
+    expect(formatCounterValue(0.005, true)).toBe('0.005');
+    expect(formatCounterValue(undefined, true)).toBe('');
+    const steps = [
+      ['585', '585'], ['585.', '585.'], ['585.0', '585.0'],
+      ['585.01', '585.01'], ['585.010', '585.010'],
+      ['1234.56', '1,234.56'], ['.', '0.'], ['.5', '0.5'], ['', ''],
+    ];
+    for (const [typed, displayed] of steps) {
+      expect(formatCounterInput(typed, true)).toBe(displayed);
+      expect(parseCounterValue(displayed)).toBe(typed === '' ? undefined : Number(typed === '.' ? 0 : typed));
+    }
+  });
+
+  it('rejects invalid drafts and retains whole-number heater formatting', () => {
+    expect(formatCounterInput('585.1.2', true)).toBeNull();
+    expect(formatCounterInput('-1', true)).toBeNull();
+    expect(formatCounterInput('1234.5')).toBe('1,235');
+  });
+
   it('adds thousands separators at each typing step', () => {
     const steps = [
       ['1', '1'], ['12', '12'], ['123', '123'],

@@ -1,8 +1,21 @@
 import { currency } from '../finance';
 
-// Match money inputs: group thousands and display whole numbers while typing.
-export function formatCounterValue(value: number | undefined): string {
-  return value === undefined ? '' : currency(Math.round(value));
+// Water meters retain decimals; other counters match whole-number money inputs.
+export function formatCounterValue(value: number | undefined, allowDecimals = false): string {
+  if (value === undefined) return '';
+  return allowDecimals
+    ? value.toLocaleString('en-US', { maximumFractionDigits: 20 })
+    : currency(Math.round(value));
+}
+
+export function formatCounterInput(rawValue: string, allowDecimals = false): string | null {
+  const normalized = rawValue.replaceAll(',', '');
+  if (allowDecimals && normalized === '.') return '0.';
+  const value = parseCounterValue(rawValue);
+  if (value === null) return null;
+  if (!allowDecimals || !normalized.includes('.')) return formatCounterValue(value, allowDecimals);
+  const [whole, fraction] = normalized.split('.');
+  return `${formatCounterValue(Number(whole), true)}.${fraction}`;
 }
 
 // An empty input clears a reading; null indicates invalid input.

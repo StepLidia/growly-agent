@@ -10,7 +10,7 @@ import { buttonClasses } from '../constants/buttonStyles';
 import { tooltipContentClasses } from '../constants/tooltipStyles';
 import { currency } from '../finance';
 import { readUtilities, saveUtilities } from '../storage/utilityStorage';
-import { formatCounterValue, parseCounterValue } from '../calculations/counterNumberInput';
+import { formatCounterInput, formatCounterValue, parseCounterValue } from '../calculations/counterNumberInput';
 
 export function UtilitiesPage() {
   const [month, setMonth] = useState(() => {
@@ -156,11 +156,14 @@ function CounterReadingInput({ counter, value, onChange }: {
   value: number | undefined;
   onChange: (value: number | undefined) => void;
 }) {
-  const [draft, setDraft] = useState(() => formatCounterValue(value));
+  const allowDecimals = counter.id !== 'heater';
+  const [draft, setDraft] = useState(() => formatCounterValue(value, allowDecimals));
 
   useEffect(() => {
-    setDraft(formatCounterValue(value));
-  }, [value]);
+    setDraft((current) => allowDecimals && parseCounterValue(current) === value
+      ? current
+      : formatCounterValue(value, allowDecimals));
+  }, [value, allowDecimals]);
 
   return (
     <div className="flex items-center justify-between gap-3">
@@ -177,11 +180,14 @@ function CounterReadingInput({ counter, value, onChange }: {
           placeholder="No reading"
           value={draft}
           onChange={(event) => {
-            const nextValue = parseCounterValue(event.currentTarget.value);
+            const nextDraft = formatCounterInput(event.currentTarget.value, allowDecimals);
+            if (nextDraft === null) return;
+            const nextValue = parseCounterValue(nextDraft);
             if (nextValue === null) return;
-            setDraft(formatCounterValue(nextValue));
+            setDraft(nextDraft);
             onChange(nextValue);
           }}
+          onBlur={() => setDraft(formatCounterValue(value, allowDecimals))}
         />
         <span className="w-8 text-sm font-bold text-slate-600">{counter.unit}</span>
       </div>
